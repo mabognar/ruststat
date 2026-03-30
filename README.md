@@ -37,7 +37,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-ruststat = "0.1.5"  # Replace with the latest version
+ruststat = "0.2.0"  # Replace with the latest version
 ```
 
 ## Quick Start
