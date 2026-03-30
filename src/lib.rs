@@ -14,7 +14,7 @@
 //! - mean, variance
 //!
 //! Distributions:
-//! - Continuous: beta, chi-square, exponential, F, gamma, normal, log-normal, Pareto (1 thru 4),
+//! - Continuous: beta, chi-square, exponential, F, gamma, normal, log-normal, Pareto (1 through 4),
 //! Student's t, continuous uniform
 //! - Discrete: binomial, geometric, hypergeometric, negative binomial, poisson
 //!
@@ -43,14 +43,12 @@
 
 // use std::collections::btree_set::Iter;
 use std::f64::consts::PI;
-use rand::{random, Rng};
-use rand::prelude::IndexedRandom;
-// use rand::prelude::IndexedRandom;
+use rand::{random};
 
 const GAMMA: f64 = 0.577215664901532860606512090082;
 
 
-/// Computes sample mean of elements in a Vec
+/// Computes sample mean of elements in a slice
 ///
 /// # Example
 /// ```
@@ -58,14 +56,16 @@ const GAMMA: f64 = 0.577215664901532860606512090082;
 /// let x = vec![1.5, 2.0, 3.5];
 /// println!("Sample mean: {}", sample_mean(&x));
 /// ```
-pub fn sample_mean(x: &Vec<f64>) -> f64 {
-    let x_iter= x.into_iter();
-    let n = x_iter.len();
-    let sum: f64 = x_iter.sum();
-    return sum / n as f64;
+pub fn sample_mean(x: &[f64]) -> f64 {
+    if x.is_empty() {
+        return f64::NAN;
+    }
+
+    let sum: f64 = x.iter().sum();
+    sum / (x.len() as f64)
 }
 
-/// Computes sample variance of elements in a Vec
+/// Computes sample variance of elements in a slice
 ///
 /// # Example
 /// ```
@@ -73,14 +73,21 @@ pub fn sample_mean(x: &Vec<f64>) -> f64 {
 /// let x = vec![1.5, 2.0, 3.5];
 /// println!("Sample variance: {}", sample_var(&x));
 /// ```
-pub fn sample_var(x: &Vec<f64>) -> f64 {
+pub fn sample_var(x: &[f64]) -> f64 {
     let n = x.len();
-    let xbar = sample_mean(&x);
-    let ss = x.iter().map(|xx| (xx - xbar).powi(2)).sum::<f64>();
-    return ss / (n-1) as f64;
+
+    // Variance requires at least 2 data points (n-1 degrees of freedom)
+    if n < 2 {
+        return f64::NAN;
+    }
+
+    let xbar = sample_mean(x);
+    let ss: f64 = x.iter().map(|xx| (xx - xbar).powi(2)).sum();
+
+    ss / ((n - 1) as f64)
 }
 
-/// Computes sample standard deviation of elements in a Vec
+/// Computes sample standard deviation of elements in a slice
 ///
 /// # Example
 /// ```
@@ -88,9 +95,11 @@ pub fn sample_var(x: &Vec<f64>) -> f64 {
 /// let x = vec![1.5, 2.0, 3.5];
 /// println!("Sample SD: {}", sample_sd(&x));
 /// ```
-pub fn sample_sd(x: &Vec<f64>) -> f64 {
-    return sample_var(&x).sqrt();
+pub fn sample_sd(x: &[f64]) -> f64 {
+    // If x has < 2 elements, sample_var returns NAN, and NAN.sqrt() is safely NAN.
+    sample_var(x).sqrt()
 }
+
 
 // ==========================================
 // ==========================================
@@ -134,29 +143,29 @@ pub struct BetaDist {
 }
 impl BetaDist {
     pub fn pdf(&mut self, x: f64) -> f64 {
-        return beta_pdf(x, self.alpha, self.beta);
+        beta_pdf(x, self.alpha, self.beta)
     }
     pub fn cdf(&mut self, x: f64) -> f64 {
-        return beta_cdf(x, self.alpha, self.beta);
+        beta_cdf(x, self.alpha, self.beta)
     }
     pub fn per(&mut self, x: f64) -> f64 {
-        return beta_per(x,self.alpha, self.beta);
+        beta_per(x,self.alpha, self.beta)
     }
     pub fn ran(&mut self) -> f64 {
-        return beta_ran(self.alpha, self.beta);
+         beta_ran(self.alpha, self.beta)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<f64> {
-        return beta_ranvec(n, self.alpha, self.beta);
+    pub fn ranvec(&mut self, n: u64) -> Vec<f64> {
+         beta_ranvec(n, self.alpha, self.beta)
     }
     pub fn mean(&mut self) -> f64 {
-        return self.alpha / (self.alpha + self.beta);
+         self.alpha / (self.alpha + self.beta)
     }
     pub fn var(&mut self) -> f64 {
-        return self.alpha * self.beta /
-            ((self.alpha + self.beta).powi(2) * (self.alpha + self.beta + 1.0));
+         self.alpha * self.beta /
+            ((self.alpha + self.beta).powi(2) * (self.alpha + self.beta + 1.0))
     }
     pub fn sd(&mut self) -> f64 {
-        return self.var().sqrt();
+         self.var().sqrt()
     }
 }
 
@@ -182,7 +191,7 @@ pub fn beta_pdf(x: f64, alpha: f64, beta: f64) -> f64 {
     if x <= 0.0 || x >= 1.0 {
         return 0.0;
     }
-    return x.powf(alpha - 1.0) * (1.0 - x).powf(beta - 1.0) / beta_fn(alpha, beta);
+    ((alpha - 1.0)*x.ln() + (beta - 1.0)*(1.0 - x).ln() - beta_fn_ln(alpha, beta)).exp()
 }
 
 
@@ -210,7 +219,7 @@ pub fn beta_cdf(x: f64, alpha: f64, beta: f64) -> f64 {
     if x >= 1.0 {
         return 1.0;
     }
-    return betai(x, alpha, beta);
+    betai(x, alpha, beta)
 }
 
 
@@ -229,7 +238,7 @@ pub fn beta_cdf(x: f64, alpha: f64, beta: f64) -> f64 {
 /// println!("Percentile: {}", beta_per(0.8, 0.5, 2.0));
 /// ```
 pub fn beta_per(q: f64, alpha: f64, beta: f64) -> f64 {
-    return betai_inv(q, alpha, beta);
+    betai_inv(q, alpha, beta)
 
 }
 
@@ -250,7 +259,7 @@ pub fn beta_per(q: f64, alpha: f64, beta: f64) -> f64 {
 pub fn beta_ran(alpha: f64, beta: f64) -> f64 {
     let x = gamma_ran(alpha, 1.0);
     let y = gamma_ran(beta, 1.0);
-    return x / (x+y);
+    x / (x+y)
 }
 
 
@@ -267,12 +276,12 @@ pub fn beta_ran(alpha: f64, beta: f64) -> f64 {
 /// use ruststat::beta_ranvec;
 /// println!("Random Vec: {:?}", beta_ranvec(10, 0.5, 2.0));
 /// ```
-pub fn beta_ranvec(n: i32, alpha: f64, beta: f64) -> Vec<f64> {
+pub fn beta_ranvec(n: u64, alpha: f64, beta: f64) -> Vec<f64> {
     let mut xvec: Vec<f64> = Vec::new();
     for _ in 0..n {
         xvec.push(beta_ran(alpha, beta));
     }
-    return xvec;
+    xvec
 }
 
 
@@ -307,28 +316,28 @@ pub struct ChiSqDist {
 }
 impl ChiSqDist {
     pub fn pdf(&mut self, x: f64) -> f64 {
-        return chisq_pdf(x, self.nu);
+        chisq_pdf(x, self.nu)
     }
     pub fn cdf(&mut self, x: f64) -> f64 {
-        return chisq_cdf(x, self.nu);
+        chisq_cdf(x, self.nu)
     }
     pub fn per(&mut self, x: f64) -> f64 {
-        return chisq_per(x, self.nu);
+        chisq_per(x, self.nu)
     }
     pub fn ran(&mut self) -> f64 {
-        return chisq_ran(self.nu);
+        chisq_ran(self.nu)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<f64> {
-        return chisq_ranvec(n, self.nu);
+    pub fn ranvec(&mut self, n: u64) -> Vec<f64> {
+        chisq_ranvec(n, self.nu)
     }
     pub fn mean(&mut self) -> f64 {
-        return self.nu;
+        self.nu
     }
     pub fn var(&mut self) -> f64 {
-        return 2.0 * self.nu;
+        2.0 * self.nu
     }
     pub fn sd(&mut self) -> f64 {
-        return self.var().sqrt();
+        self.var().sqrt()
     }
 }
 
@@ -353,7 +362,7 @@ pub fn chisq_pdf(x: f64, nu: f64) -> f64 {
     if x <= 0.0 {
         return 0.0;
     }
-    return gamma_pdf(x, nu/2.0,1.0/2.0);
+    gamma_pdf(x, nu/2.0,1.0/2.0)
 }
 
 
@@ -395,20 +404,7 @@ pub fn chisq_cdf(x: f64, nu: f64) -> f64 {
 /// println!("Percentile: {}", chisq_per(0.8, 8.0));
 /// ```
 pub fn chisq_per(p: f64, nu: f64) -> f64 {
-    return gamma_per(p, nu/2.0, 1.0/2.0);
-
-    // let f = |x| { chisq_cdf(x, nu) - p};
-    // let eps = 1.0e-15;
-    // let mut convergency = SimpleConvergency { eps, max_iter:30 };
-    //
-    // let percentile = find_root_secant(eps, 1.0-eps, &f, &mut convergency);
-    //
-    // if p < 0.0 || p > 1.0 || nu <= 0.0 || percentile.is_err() {
-    //     println!("Error in function gamma_percentile");
-    //     return f64::NAN;
-    // }
-    //
-    // return percentile.unwrap();
+    gamma_per(p, nu/2.0, 1.0/2.0)
 }
 
 
@@ -425,7 +421,7 @@ pub fn chisq_per(p: f64, nu: f64) -> f64 {
 /// println!("Random draw: {}", chisq_ran(8.0));
 /// ```
 pub fn chisq_ran(nu: f64) -> f64 {
-    return gamma_ran(nu/2.0, 1.0/2.0);
+    gamma_ran(nu/2.0, 1.0/2.0)
 }
 
 
@@ -441,12 +437,12 @@ pub fn chisq_ran(nu: f64) -> f64 {
 /// use ruststat::chisq_ranvec;
 /// println!("Random Vec: {:?}", chisq_ranvec(10, 8.0));
 /// ```
-pub fn chisq_ranvec(n: i32, nu: f64) -> Vec<f64> {
+pub fn chisq_ranvec(n: u64, nu: f64) -> Vec<f64> {
     let mut xvec: Vec<f64> = Vec::new();
     for _ in 0..n {
         xvec.push(chisq_ran(nu));
     }
-    return xvec;
+    xvec
 }
 
 
@@ -481,28 +477,28 @@ pub struct ExpDist {
 }
 impl ExpDist {
     pub fn pdf(&mut self, x: f64) -> f64 {
-        return exp_pdf(x, self.lambda);
+        exp_pdf(x, self.lambda)
     }
     pub fn cdf(&mut self, x: f64) -> f64 {
-        return exp_cdf(x, self.lambda);
+        exp_cdf(x, self.lambda)
     }
     pub fn per(&mut self, x: f64) -> f64 {
-        return exp_per(x, self.lambda);
+        exp_per(x, self.lambda)
     }
     pub fn ran(&mut self) -> f64 {
-        return exp_ran(self.lambda);
+        exp_ran(self.lambda)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<f64> {
-        return exp_ranvec(n, self.lambda);
+    pub fn ranvec(&mut self, n: u64) -> Vec<f64> {
+        exp_ranvec(n, self.lambda)
     }
     pub fn mean(&mut self) -> f64 {
-        return 1.0 / self.lambda;
+        1.0 / self.lambda
     }
     pub fn var(&mut self) -> f64 {
-        return 1.0 / self.lambda.powi(2);
+        1.0 / self.lambda.powi(2)
     }
     pub fn sd(&mut self) -> f64 {
-        return self.var().sqrt();
+        self.var().sqrt()
     }
 }
 
@@ -527,7 +523,7 @@ pub fn exp_pdf(x: f64, lambda: f64) -> f64 {
     if x <= 0.0 {
         return 0.0;
     }
-    return lambda * (-lambda*x).exp();
+    lambda * (-lambda*x).exp()
 }
 
 
@@ -552,11 +548,8 @@ pub fn exp_cdf(x: f64, lambda: f64) -> f64 {
         return 0.0;
     }
 
-    return if x < 2.0 {
-        gser(x * lambda, 1.0)
-    } else {
-        1.0 - gcf(x * lambda, 1.0)
-    }
+    // Exact closed-form solution
+    1.0 - (-lambda * x).exp()
 }
 
 /// Computes a percentile for `X ~ Exp(lambda)`
@@ -573,20 +566,7 @@ pub fn exp_cdf(x: f64, lambda: f64) -> f64 {
 /// println!("Percentile: {}", exp_per(0.8, 8.0));
 /// ```
 pub fn exp_per(p: f64, lambda: f64) -> f64 {
-    return -(1.0-p).ln() / lambda;
-
-    // let f = |x| { exp_cdf(x,lambda) - p};
-    // let eps = 1.0e-15;
-    // let mut convergency = SimpleConvergency { eps, max_iter:30 };
-    //
-    // let percentile = find_root_secant(0.0, 1.0/lambda, &f, &mut convergency);
-    //
-    // if p < 0.0 || p > 1.0 || lambda <= 0.0 || percentile.is_err() {
-    //     println!("Error in function ficdf");
-    //     return f64::NAN;
-    // }
-    //
-    // return percentile.unwrap();
+    -(1.0-p).ln() / lambda
 }
 
 
@@ -606,7 +586,7 @@ pub fn exp_ran(lambda: f64) -> f64 {
     let u: f64;
     u = random();
     // u = rand::thread_rng().gen();
-    return -(1.0-u).ln()/lambda;
+    -(1.0-u).ln()/lambda
 }
 
 
@@ -622,12 +602,12 @@ pub fn exp_ran(lambda: f64) -> f64 {
 /// use ruststat::exp_ranvec;
 /// println!("Random vector: {:?}", exp_ranvec(10, 8.0));
 /// ```
-pub fn exp_ranvec(n: i32, lambda: f64) -> Vec<f64> {
+pub fn exp_ranvec(n: u64, lambda: f64) -> Vec<f64> {
     let mut xvec: Vec<f64> = Vec::new();
     for _ in 0..n {
         xvec.push(exp_ran(lambda));
     }
-    return xvec;
+    xvec
 }
 
 
@@ -664,29 +644,29 @@ pub struct FDist {
 }
 impl FDist {
     pub fn pdf(&mut self, x: f64) -> f64 {
-        return f_pdf(x, self.nu1, self.nu2);
+        f_pdf(x, self.nu1, self.nu2)
     }
     pub fn cdf(&mut self, x: f64) -> f64 {
-        return f_cdf(x, self.nu1, self.nu2);
+        f_cdf(x, self.nu1, self.nu2)
     }
     pub fn per(&mut self, x: f64) -> f64 {
-        return f_per(x, self.nu1, self.nu2);
+        f_per(x, self.nu1, self.nu2)
     }
     pub fn ran(&mut self) -> f64 {
-        return f_ran(self.nu1, self.nu2);
+        f_ran(self.nu1, self.nu2)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<f64> {
-        return f_ranvec(n, self.nu1, self.nu2);
+    pub fn ranvec(&mut self, n: u64) -> Vec<f64> {
+        f_ranvec(n, self.nu1, self.nu2)
     }
     pub fn mean(&mut self) -> f64 {
-        return self.nu2 / (self.nu2-2.0);
+        self.nu2 / (self.nu2-2.0)
     }
     pub fn var(&mut self) -> f64 {
-        return 2.0 * self.nu2.powi(2) * (self.nu1 + self.nu2 - 2.0) /
-            (self.nu1 * (self.nu2 - 2.0).powi(2) * (self.nu2 - 4.0));
+        2.0 * self.nu2.powi(2) * (self.nu1 + self.nu2 - 2.0) /
+            (self.nu1 * (self.nu2 - 2.0).powi(2) * (self.nu2 - 4.0))
     }
     pub fn sd(&mut self) -> f64 {
-        return self.var().sqrt();
+        self.var().sqrt()
     }
 }
 
@@ -712,8 +692,8 @@ pub fn f_pdf(x: f64, nu1: f64, nu2: f64) -> f64 {
     if x <= 0.0 {
         return 0.0;
     }
-    return ((nu1*x).powf(nu1) * nu2.powf(nu2) / (nu1*x + nu2).powf(nu1+nu2)).sqrt() /
-        (x * beta_fn(nu1/2.0, nu2/2.0));
+    (0.5*(nu1*(nu1*x).ln() + nu2*nu2.ln() - (nu1+nu2)*(nu1*x + nu2).ln())
+        - x.ln() - beta_fn_ln(nu1/2.0, nu2/2.0)).exp()
 }
 
 
@@ -738,7 +718,7 @@ pub fn f_cdf(x: f64, nu1: f64, nu2: f64) -> f64 {
     if x <= 0.0 {
         return 0.0;
     }
-    return 1.0 - betai(nu2 / (nu2 + nu1 * x), nu2 / 2.0, nu1 / 2.0);
+    1.0 - betai(nu2 / (nu2 + nu1 * x), nu2 / 2.0, nu1 / 2.0)
 }
 
 
@@ -758,19 +738,7 @@ pub fn f_cdf(x: f64, nu1: f64, nu2: f64) -> f64 {
 /// println!("Percentile: {}", f_per(0.8, 4.0, 18.0));
 /// ```
 pub fn f_per(p: f64, nu1: f64, nu2: f64) -> f64 {
-    return nu2/nu1 * (1.0 / beta_per(1.0-p,nu2/2.0,nu1/2.0) - 1.0);
-    // let f = |x| { f_cdf(x,nu1, nu2) - p};
-    // let eps = 1.0e-30;
-    // let mut convergency = SimpleConvergency { eps, max_iter:30 };
-    //
-    // let percentile = find_root_secant(0f64, 1f64, &f, &mut convergency);
-    //
-    // if p < 0.0 || p > 1.0 || nu1 <= 0.0 || nu2 <= 0.0 || percentile.is_err() {
-    //     println!("Error in function ficdf");
-    //     return f64::NAN;
-    // }
-    //
-    // return percentile.unwrap();
+    nu2/nu1 * (1.0 / beta_per(1.0-p,nu2/2.0,nu1/2.0) - 1.0)
 }
 
 
@@ -789,7 +757,7 @@ pub fn f_per(p: f64, nu1: f64, nu2: f64) -> f64 {
 /// ```
 pub fn f_ran(nu1: f64, nu2: f64) -> f64 {
     let x = beta_ran(nu1/2.0, nu2/2.0);
-    return nu2 * x / (nu1 * (1.0-x));
+    nu2 * x / (nu1 * (1.0-x))
 }
 
 /// Save random draws from `X ~ F(nu1, nu2)` distribution into a `Vec`
@@ -805,12 +773,12 @@ pub fn f_ran(nu1: f64, nu2: f64) -> f64 {
 /// use ruststat::f_ranvec;
 /// println!("Random Vec: {:?}", f_ranvec(10, 4.0, 18.0));
 /// ```
-pub fn f_ranvec(n: i32, nu1: f64, nu2: f64) -> Vec<f64> {
+pub fn f_ranvec(n: u64, nu1: f64, nu2: f64) -> Vec<f64> {
     let mut xvec: Vec<f64> = Vec::new();
     for _ in 0..n {
         xvec.push(f_ran(nu1, nu2));
     }
-    return xvec;
+    xvec
 }
 
 
@@ -847,28 +815,28 @@ pub struct GammaDist {
 }
 impl GammaDist {
     pub fn pdf(&mut self, x: f64) -> f64 {
-        return gamma_pdf(x, self.alpha, self.beta);
+        gamma_pdf(x, self.alpha, self.beta)
     }
     pub fn cdf(&mut self, x: f64) -> f64 {
-        return gamma_cdf(x, self.alpha, self.beta);
+        gamma_cdf(x, self.alpha, self.beta)
     }
     pub fn per(&mut self, x: f64) -> f64 {
-        return gamma_per(x, self.alpha, self.beta);
+        gamma_per(x, self.alpha, self.beta)
     }
     pub fn ran(&mut self) -> f64 {
-        return gamma_ran(self.alpha, self.beta);
+        gamma_ran(self.alpha, self.beta)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<f64> {
-        return gamma_ranvec(n, self.alpha, self.beta);
+    pub fn ranvec(&mut self, n: u64) -> Vec<f64> {
+        gamma_ranvec(n, self.alpha, self.beta)
     }
     pub fn mean(&mut self) -> f64 {
-        return self.alpha / self.beta;
+        self.alpha / self.beta
     }
     pub fn var(&mut self) -> f64 {
-        return self.alpha / self.beta.powi(2);
+        self.alpha / self.beta.powi(2)
     }
     pub fn sd(&mut self) -> f64 {
-        return self.var().sqrt();
+        self.var().sqrt()
     }
 }
 
@@ -893,7 +861,7 @@ pub fn gamma_pdf(x: f64, alpha: f64, beta: f64) -> f64 {
     if x <= 0.0 {
         return 0.0;
     }
-    return beta.powf(alpha) / gamma(alpha) * x.powf(alpha-1.0) * (-beta*x).exp();
+    (alpha*beta.ln() - gamma_ln(alpha) + (alpha-1.0)*x.ln()  - beta*x).exp()
 }
 
 
@@ -912,18 +880,15 @@ pub fn gamma_pdf(x: f64, alpha: f64, beta: f64) -> f64 {
 /// ```
 pub fn gamma_cdf(x: f64, alpha: f64, beta: f64) -> f64 {
     if alpha <= 0.0 || beta <= 0.0 {
-        println!("NAN produced. Error in function gamma_pdf");
+        println!("NAN produced. Error in function gamma_cdf");
         return f64::NAN;
     }
     if x <= 0.0 {
         return 0.0;
     }
 
-    return if x < (alpha + 1.0) {
-        gser(x * beta, alpha)
-    } else {
-        1.0 - gcf(x * beta, alpha)
-    }
+    // Route directly through the protected gammp function
+    gammp(x * beta, alpha)
 }
 
 
@@ -943,19 +908,7 @@ pub fn gamma_cdf(x: f64, alpha: f64, beta: f64) -> f64 {
 /// println!("Percentile: {}", gamma_per(0.8, 4.0, 2.7));
 /// ```
 pub fn gamma_per(p: f64, alpha: f64, beta: f64) -> f64 {
-    return gammai_inv(p, alpha) / beta;
-    // let f = |x| { gamma_cdf(x,a,b) - p};
-    // let eps = 1.0e-15;
-    // let mut convergency = SimpleConvergency { eps, max_iter:30 };
-    //
-    // let percentile = find_root_secant(eps, a/b, &f, &mut convergency);
-    //
-    // if p < 0.0 || p > 1.0 || a <= 0.0 || b <= 0.0 ||percentile.is_err() {
-    //     println!("Error in function gamma_percentile");
-    //     return f64::NAN;
-    // }
-    //
-    // return percentile.unwrap();
+    gammai_inv(p, alpha) / beta
 }
 
 
@@ -1014,12 +967,12 @@ pub fn gamma_ran(alpha: f64, beta: f64) -> f64 {
 /// use ruststat::gamma_ranvec;
 /// println!("Random Vec: {:?}", gamma_ranvec(10, 4.0, 2.7));
 /// ```
-pub fn gamma_ranvec(n: i32, alpha: f64, beta: f64) -> Vec<f64> {
+pub fn gamma_ranvec(n: u64, alpha: f64, beta: f64) -> Vec<f64> {
     let mut xvec: Vec<f64> = Vec::new();
     for _ in 0..n {
         xvec.push(gamma_ran(alpha, beta));
     }
-    return xvec;
+    xvec
 }
 
 
@@ -1056,28 +1009,28 @@ pub struct GumbelDist {
 }
 impl GumbelDist {
     pub fn pdf(&mut self, x: f64) -> f64 {
-        return gumbel_pdf(x, self.mu, self.beta);
+        gumbel_pdf(x, self.mu, self.beta)
     }
     pub fn cdf(&mut self, x: f64) -> f64 {
-        return gumbel_cdf(x, self.mu, self.beta);
+        gumbel_cdf(x, self.mu, self.beta)
     }
     pub fn per(&mut self, x: f64) -> f64 {
-        return gumbel_per(x, self.mu, self.beta);
+        gumbel_per(x, self.mu, self.beta)
     }
     pub fn ran(&mut self) -> f64 {
-        return gumbel_ran(self.mu, self.beta);
+        gumbel_ran(self.mu, self.beta)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<f64> {
-        return gumbel_ranvec(n, self.mu, self.beta);
+    pub fn ranvec(&mut self, n: u64) -> Vec<f64> {
+        gumbel_ranvec(n, self.mu, self.beta)
     }
     pub fn mean(&mut self) -> f64 {
-        return self.mu + self.beta * GAMMA;
+        self.mu + self.beta * GAMMA
     }
     pub fn var(&mut self) -> f64 {
-        return PI.powi(2)/6.0 * self.beta.powi(2);
+        PI.powi(2)/6.0 * self.beta.powi(2)
     }
     pub fn sd(&mut self) -> f64 {
-        return self.var().sqrt();
+        self.var().sqrt()
     }
 }
 
@@ -1099,7 +1052,7 @@ pub fn gumbel_pdf(x: f64, mu: f64, beta: f64) -> f64 {
         println!("NAN produced. Error in function gumbel_pdf");
         return f64::NAN;
     }
-    return 1.0 / beta * (-((x-mu)/beta + (-(x-mu)/beta).exp())).exp();
+    1.0 / beta * (-((x-mu)/beta + (-(x-mu)/beta).exp())).exp()
 }
 
 
@@ -1122,7 +1075,7 @@ pub fn gumbel_cdf(x: f64, mu: f64, beta: f64) -> f64 {
         return f64::NAN;
     }
 
-    return (-(-(x-mu)/beta).exp()).exp();
+    (-(-(x-mu)/beta).exp()).exp()
 }
 
 
@@ -1142,7 +1095,7 @@ pub fn gumbel_cdf(x: f64, mu: f64, beta: f64) -> f64 {
 /// println!("Percentile: {}", gumbel_per(0.8, 5.5, 2.0));
 /// ```
 pub fn gumbel_per(p: f64, mu: f64, beta: f64) -> f64 {
-    return mu - beta * (-p.ln()).ln();
+    mu - beta * (-p.ln()).ln()
 }
 
 
@@ -1160,7 +1113,7 @@ pub fn gumbel_per(p: f64, mu: f64, beta: f64) -> f64 {
 /// println!("Random draw: {:?}", gumbel_ran(5.5, 2.0));
 /// ```
 pub fn gumbel_ran(mu: f64, beta: f64) -> f64 {
-    return mu - beta * (-unif_ran(0.0,1.0).ln()).ln();
+    mu - beta * (-unif_ran(0.0,1.0).ln()).ln()
 }
 
 
@@ -1177,12 +1130,12 @@ pub fn gumbel_ran(mu: f64, beta: f64) -> f64 {
 /// use ruststat::gumbel_ranvec;
 /// println!("Random Vec: {:?}", gumbel_ranvec(10, 5.5, 2.0));
 /// ```
-pub fn gumbel_ranvec(n: i32, mu: f64, beta: f64) -> Vec<f64> {
+pub fn gumbel_ranvec(n: u64, mu: f64, beta: f64) -> Vec<f64> {
     let mut xvec: Vec<f64> = Vec::new();
     for _ in 0..n {
         xvec.push(mu - beta * (-unif_ran(0.0,1.0).ln()).ln());
     }
-    return xvec;
+    xvec
 }
 
 
@@ -1219,29 +1172,29 @@ pub struct LogNormalDist {
 }
 impl LogNormalDist {
     pub fn pdf(&mut self, x: f64) -> f64 {
-        return lognormal_pdf(x, self.mu, self.sigma);
+        lognormal_pdf(x, self.mu, self.sigma)
     }
     pub fn cdf(&mut self, x: f64) -> f64 {
-        return lognormal_cdf(x, self.mu, self.sigma);
+        lognormal_cdf(x, self.mu, self.sigma)
     }
     pub fn per(&mut self, x: f64) -> f64 {
-        return lognormal_per(x,self.mu, self.sigma);
+        lognormal_per(x,self.mu, self.sigma)
     }
     pub fn ran(&mut self) -> f64 {
-        return lognormal_ran(self.mu, self.sigma);
+        lognormal_ran(self.mu, self.sigma)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<f64> {
-        return lognormal_ranvec(n, self.mu, self.sigma);
+    pub fn ranvec(&mut self, n: u64) -> Vec<f64> {
+        lognormal_ranvec(n, self.mu, self.sigma)
     }
     pub fn mean(&mut self) -> f64 {
-        return (self.mu + 0.5 * self.sigma.powi(2)).exp();
+        (self.mu + 0.5 * self.sigma.powi(2)).exp()
     }
     pub fn var(&mut self) -> f64 {
-        return (self.sigma.powi(2).exp() - 1.0) *
-            (2.0 * self.mu + self.sigma.powi(2)).exp();
+        (self.sigma.powi(2).exp() - 1.0) *
+            (2.0 * self.mu + self.sigma.powi(2)).exp()
     }
     pub fn sd(&mut self) -> f64 {
-        return self.var().sqrt();
+        self.var().sqrt()
     }
 }
 
@@ -1266,8 +1219,8 @@ pub fn lognormal_pdf(x: f64, mu: f64, sigma: f64) -> f64 {
     if x <= 0.0 {
         return 0.0;
     }
-    return (-(x.ln()-mu).powi(2) / (2.0*sigma.powi(2))).exp() /
-            (x * sigma * (2.0 * PI).sqrt());
+    (-(x.ln()-mu).powi(2) / (2.0*sigma.powi(2)) - x.ln() - sigma.ln() -
+        0.5*(2.0*PI).ln()).exp()
 }
 
 
@@ -1293,7 +1246,7 @@ pub fn lognormal_cdf(x: f64, mu: f64, sigma: f64) -> f64 {
         return 0.0;
     }
 
-    return 0.5 * (1.0 + erf((x.ln() - mu)/(sigma*2.0f64.sqrt())));
+    0.5 * (1.0 + erf((x.ln() - mu)/(sigma*2.0f64.sqrt())))
 }
 
 
@@ -1313,7 +1266,7 @@ pub fn lognormal_cdf(x: f64, mu: f64, sigma: f64) -> f64 {
 /// println!("Percentile: {}", lognormal_per(0.8, 0.0, 1.0));
 /// ```
 pub fn lognormal_per(p: f64, mu: f64, sigma: f64) -> f64 {
-    return (2f64.sqrt() * sigma * erf_inv(2.0*p-1.0) + mu).exp();
+    (2f64.sqrt() * sigma * erf_inv(2.0*p-1.0) + mu).exp()
 }
 
 
@@ -1331,7 +1284,7 @@ pub fn lognormal_per(p: f64, mu: f64, sigma: f64) -> f64 {
 /// println!("Random draw: {}", lognormal_ran(0.0, 1.0));
 /// ```
 pub fn lognormal_ran(mu: f64, sigma: f64) -> f64 {
-    return normal_ran(mu, sigma).exp();
+    normal_ran(mu, sigma).exp()
 }
 
 
@@ -1348,12 +1301,12 @@ pub fn lognormal_ran(mu: f64, sigma: f64) -> f64 {
 /// use ruststat::lognormal_ranvec;
 /// println!("Random Vec: {:?}", lognormal_ranvec(10, 0.5, 2.0));
 /// ```
-pub fn lognormal_ranvec(n: i32, mu: f64, sigma: f64) -> Vec<f64> {
+pub fn lognormal_ranvec(n: u64, mu: f64, sigma: f64) -> Vec<f64> {
     let mut xvec: Vec<f64> = Vec::new();
     for _ in 0..n {
         xvec.push(lognormal_ran(mu, sigma));
     }
-    return xvec;
+    xvec
 }
 
 
@@ -1390,28 +1343,28 @@ pub struct NormalDist {
 }
 impl NormalDist {
     pub fn pdf(&mut self, x: f64) -> f64 {
-        return normal_pdf(x, self.mu, self.sigma);
+        normal_pdf(x, self.mu, self.sigma)
     }
     pub fn cdf(&mut self, x: f64) -> f64 {
-        return normal_cdf(x, self.mu, self.sigma);
+        normal_cdf(x, self.mu, self.sigma)
     }
     pub fn per(&mut self, x: f64) -> f64 {
-        return normal_per(x,self.mu, self.sigma);
+        normal_per(x,self.mu, self.sigma)
     }
     pub fn ran(&mut self) -> f64 {
-        return normal_ran(self.mu, self.sigma);
+        normal_ran(self.mu, self.sigma)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<f64> {
-        return normal_ranvec(n,self.mu, self.sigma);
+    pub fn ranvec(&mut self, n: u64) -> Vec<f64> {
+        normal_ranvec(n,self.mu, self.sigma)
     }
     pub fn mean(&mut self) -> f64 {
-        return self.mu;
+        self.mu
     }
     pub fn var(&mut self) -> f64 {
-        return self.sigma * self.sigma;
+        self.sigma * self.sigma
     }
     pub fn sd(&mut self) -> f64 {
-        return self.sigma;
+        self.sigma
     }
 }
 
@@ -1433,8 +1386,7 @@ pub fn normal_pdf(x: f64, mu: f64, sigma: f64) -> f64 {
         println!("NAN produced. Error in function normal_pdf");
         return f64::NAN;
     }
-    return 1.0 / (2.0 * PI * sigma.powi(2)).sqrt() *
-        (-0.5*((x-mu)/sigma).powi(2)).exp();
+    (-0.5*(2.0*PI*sigma).ln() -0.5*((x-mu)/sigma).powi(2)).exp()
 }
 
 
@@ -1457,7 +1409,7 @@ pub fn normal_cdf(x: f64, mu: f64, sigma: f64) -> f64 {
         return f64::NAN;
     }
 
-    return 0.5 * (1.0 + erf(((x-mu)/sigma) / 2.0f64.sqrt()));
+    0.5 * (1.0 + erf(((x-mu)/sigma) / 2.0f64.sqrt()))
 }
 
 
@@ -1477,7 +1429,7 @@ pub fn normal_cdf(x: f64, mu: f64, sigma: f64) -> f64 {
 /// println!("Percentile: {}", normal_per(0.8, 100.0, 16.0));
 /// ```
 pub fn normal_per(p: f64, mu: f64, sigma: f64) -> f64 {
-    return mu + sigma * 2.0f64.sqrt() * erf_inv(2.0*p-1.0);
+    mu + sigma * 2.0f64.sqrt() * erf_inv(2.0*p-1.0)
 }
 
 
@@ -1495,23 +1447,17 @@ pub fn normal_per(p: f64, mu: f64, sigma: f64) -> f64 {
 /// println!("Random draw: {}", normal_ran(100.0, 16.0));
 /// ```
 pub fn normal_ran(mu: f64, sigma: f64) -> f64 {
-    let mut rng = rand::rng();
-    let u1: f64;
-    let u2: f64;
-    let z1: f64;
-    // let mut z2: f64;
-
     if sigma <= 0.0 {
-        println!("Bad argument to normal_rand");
+        println!("Bad argument to normal_ran");
         return f64::NAN;
     }
 
-    u1 = rng.random();
-    u2 = rng.random();
-    z1 = mu + sigma * (-2.0 * u1.ln()).sqrt() * (2.0 * PI * u2).cos();
-    // z2 = mu + sig * (-2.0 * u1.ln()).sqrt() * (2.0 * PI * u2).sin();
+    // Use the standard random() shortcut directly
+    let u1: f64 = random();
+    let u2: f64 = random();
 
-    return z1;
+    // The Box-Muller transform
+    mu + sigma * (-2.0 * u1.ln()).sqrt() * (2.0 * PI * u2).cos()
 }
 
 
@@ -1528,68 +1474,43 @@ pub fn normal_ran(mu: f64, sigma: f64) -> f64 {
 /// use ruststat::normal_ranvec;
 /// println!("Random Vec of normals: {:?}", normal_ranvec(10, 100.0, 16.0));
 /// ```
-pub fn normal_ranvec(n: i32, mu: f64, sigma: f64) -> Vec<f64> {
-    let mut rng = rand::rng();
-    let mut u1: f64;
-    let mut u2: f64;
-    let mut z1: f64;
-    let mut z2: f64;
-
-    let mut zvecthr: Vec<f64> = Vec::new();
-
-    let niter: i32;
-    if n <= 0 || sigma <= 0.0 {
-        println!("Bad argument to normal_rand");
-        return vec![f64::NAN];
+pub fn normal_ranvec(n: u64, mu: f64, sigma: f64) -> Vec<f64> {
+    if n == 0 || sigma <= 0.0 {
+        println!("Bad argument to normal_ranvec");
+        return if n == 0 { vec![] } else { vec![f64::NAN] };
     }
 
-    if 0==n%2 {
-        niter = n / 2;
-    }
-    else {
-        niter = (n + 1) / 2;
-    }
+    // Pre-allocate the exact amount of memory needed
+    let mut zvecthr: Vec<f64> = Vec::with_capacity(n as usize);
 
-    // let now = Instant::now();
+    // Calculate how many loop iterations we need (generating 2 at a time)
+    let niter = (n + 1) / 2;
 
     for _ in 0..niter {
-        u1 = rng.random();
-        u2 = rng.random();
-        z1 = mu + sigma * (-2.0 * u1.ln()).sqrt() * (2.0 * PI * u2).cos();
-        z2 = mu + sigma * (-2.0 * u1.ln()).sqrt() * (2.0 * PI * u2).sin();
+        // Use the standard random() shortcut directly
+        let u1: f64 = random();
+        let u2: f64 = random();
+
+        // Calculate the shared components of the Box-Muller transform once
+        let r = sigma * (-2.0 * u1.ln()).sqrt();
+        let theta = 2.0 * PI * u2;
+
+        // Generate the pair
+        let z1 = mu + r * theta.cos();
+        let z2 = mu + r * theta.sin();
+
         zvecthr.push(z1);
         zvecthr.push(z2);
     }
 
-    // let elapsed = now.elapsed();
-    // println!("Elapsed: {:.2?}", elapsed);
-
-    if 0!=n%2 { // n is odd --- throw one out
+    // If 'n' was an odd number, we generated exactly 1 too many. Pop it off.
+    if n % 2 != 0 {
         zvecthr.pop();
     }
 
-    return zvecthr;
+    zvecthr
 }
 
-// pub fn normal_rand2(mu: f64, sig: f64, rng: &mut impl Rng) -> f64 {
-//     // let mut rng = rand::thread_rng();
-//     let u1: f64;
-//     let u2: f64;
-//     let z1: f64;
-//     // let mut z2: f64;
-//
-//     if sig <= 0.0 {
-//         println!("Bad argument to normal_rand");
-//         return f64::NAN;
-//     }
-//
-//     u1 = rng.gen();
-//     u2 = rng.gen();
-//     z1 = mu + sig * (-2.0 * u1.ln()).sqrt() * (2.0 * PI * u2).cos();
-//     // z2 = mu + sig * (-2.0 * u1.ln()).sqrt() * (2.0 * PI * u2).sin();
-//
-//     return z1;
-// }
 
 
 // ==========================================
@@ -1625,30 +1546,30 @@ pub struct Pareto1Dist {
 }
 impl Pareto1Dist {
     pub fn pdf(&mut self, x: f64) -> f64 {
-        return pareto4_pdf(x, self.sigma, self.sigma, 1.0, self.alpha);
+        pareto4_pdf(x, self.sigma, self.sigma, 1.0, self.alpha)
     }
     pub fn cdf(&mut self, x: f64) -> f64 {
-        return pareto4_cdf(x, self.sigma, self.sigma, 1.0, self.alpha);
+        pareto4_cdf(x, self.sigma, self.sigma, 1.0, self.alpha)
     }
     pub fn per(&mut self, x: f64) -> f64 {
-        return pareto4_per(x,self.sigma, self.sigma, 1.0, self.alpha);
+        pareto4_per(x,self.sigma, self.sigma, 1.0, self.alpha)
     }
     pub fn ran(&mut self) -> f64 {
-        return pareto4_ran(self.sigma, self.sigma, 1.0, self.alpha);
+        pareto4_ran(self.sigma, self.sigma, 1.0, self.alpha)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<f64> {
-        return pareto4_ranvec(n, self.sigma, self.sigma, 1.0, self.alpha);
+    pub fn ranvec(&mut self, n: u64) -> Vec<f64> {
+        pareto4_ranvec(n, self.sigma, self.sigma, 1.0, self.alpha)
     }
     pub fn mean(&mut self) -> f64 {
-        return self.sigma + self.sigma * gamma(self.alpha-1.0) *
-            gamma(1.0 + 1.0) / gamma(self.alpha);
+        self.sigma + self.sigma * gamma(self.alpha-1.0) *
+            gamma(1.0 + 1.0) / gamma(self.alpha)
     }
     pub fn var(&mut self) -> f64 {
-        return self.sigma.powi(2) * gamma(self.alpha - 1.0 * 2.0) *
-            gamma(1.0 + 1.0 * 2.0) / gamma(self.alpha) - self.mean().powi(2);
+        self.sigma.powi(2) * gamma(self.alpha - 1.0 * 2.0) *
+            gamma(1.0 + 1.0 * 2.0) / gamma(self.alpha) - self.mean().powi(2)
     }
     pub fn sd(&mut self) -> f64 {
-        return self.var().sqrt();
+        self.var().sqrt()
     }
 }
 
@@ -1688,30 +1609,30 @@ pub struct Pareto2Dist {
 }
 impl Pareto2Dist {
     pub fn pdf(&mut self, x: f64) -> f64 {
-        return pareto4_pdf(x, self.mu, self.sigma, 1.0, self.alpha);
+        pareto4_pdf(x, self.mu, self.sigma, 1.0, self.alpha)
     }
     pub fn cdf(&mut self, x: f64) -> f64 {
-        return pareto4_cdf(x, self.mu, self.sigma, 1.0, self.alpha);
+        pareto4_cdf(x, self.mu, self.sigma, 1.0, self.alpha)
     }
     pub fn per(&mut self, x: f64) -> f64 {
-        return pareto4_per(x,self.mu, self.sigma, 1.0, self.alpha);
+        pareto4_per(x,self.mu, self.sigma, 1.0, self.alpha)
     }
     pub fn ran(&mut self) -> f64 {
-        return pareto4_ran(self.mu, self.sigma, 1.0, self.alpha);
+        pareto4_ran(self.mu, self.sigma, 1.0, self.alpha)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<f64> {
-        return pareto4_ranvec(n,self.mu, self.sigma, 1.0, self.alpha);
+    pub fn ranvec(&mut self, n: u64) -> Vec<f64> {
+        pareto4_ranvec(n,self.mu, self.sigma, 1.0, self.alpha)
     }
     pub fn mean(&mut self) -> f64 {
-        return self.mu + self.sigma * gamma(self.alpha-1.0) *
-            gamma(1.0 + 1.0) / gamma(self.alpha);
+        self.mu + self.sigma * gamma(self.alpha-1.0) *
+            gamma(1.0 + 1.0) / gamma(self.alpha)
     }
     pub fn var(&mut self) -> f64 {
-        return self.sigma.powi(2) * gamma(self.alpha - 1.0 * 2.0) *
-            gamma(1.0 + 1.0 * 2.0) / gamma(self.alpha) - self.mean().powi(2);
+        self.sigma.powi(2) * gamma(self.alpha - 1.0 * 2.0) *
+            gamma(1.0 + 1.0 * 2.0) / gamma(self.alpha) - self.mean().powi(2)
     }
     pub fn sd(&mut self) -> f64 {
-        return self.var().sqrt();
+        self.var().sqrt()
     }
 }
 
@@ -1751,30 +1672,30 @@ pub struct Pareto3Dist {
 }
 impl Pareto3Dist {
     pub fn pdf(&mut self, x: f64) -> f64 {
-        return pareto4_pdf(x, self.mu, self.sigma, self.gamma, 1.0);
+        pareto4_pdf(x, self.mu, self.sigma, self.gamma, 1.0)
     }
     pub fn cdf(&mut self, x: f64) -> f64 {
-        return pareto4_cdf(x, self.mu, self.sigma, self.gamma, 1.0);
+        pareto4_cdf(x, self.mu, self.sigma, self.gamma, 1.0)
     }
     pub fn per(&mut self, x: f64) -> f64 {
-        return pareto4_per(x,self.mu, self.sigma, self.gamma, 1.0);
+        pareto4_per(x,self.mu, self.sigma, self.gamma, 1.0)
     }
     pub fn ran(&mut self) -> f64 {
-        return pareto4_ran(self.mu, self.sigma, self.gamma, 1.0);
+        pareto4_ran(self.mu, self.sigma, self.gamma, 1.0)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<f64> {
-        return pareto4_ranvec(n,self.mu, self.sigma, self.gamma, 1.0);
+    pub fn ranvec(&mut self, n: u64) -> Vec<f64> {
+        pareto4_ranvec(n,self.mu, self.sigma, self.gamma, 1.0)
     }
     pub fn mean(&mut self) -> f64 {
-        return self.mu + self.sigma * gamma(1.0-self.gamma) *
-            gamma(1.0 + self.gamma) / gamma(1.0);
+        self.mu + self.sigma * gamma(1.0-self.gamma) *
+            gamma(1.0 + self.gamma) / gamma(1.0)
     }
     pub fn var(&mut self) -> f64 {
-        return self.sigma.powi(2) * gamma(1.0 - self.gamma * 2.0) *
-            gamma(1.0 + self.gamma * 2.0) / gamma(1.0) - self.mean().powi(2);
+        self.sigma.powi(2) * gamma(1.0 - self.gamma * 2.0) *
+            gamma(1.0 + self.gamma * 2.0) / gamma(1.0) - self.mean().powi(2)
     }
     pub fn sd(&mut self) -> f64 {
-        return self.var().sqrt();
+        self.var().sqrt()
     }
 }
 
@@ -1816,30 +1737,30 @@ pub struct Pareto4Dist {
 }
 impl Pareto4Dist {
     pub fn pdf(&mut self, x: f64) -> f64 {
-        return pareto4_pdf(x, self.mu, self.sigma, self.gamma, self.alpha);
+        pareto4_pdf(x, self.mu, self.sigma, self.gamma, self.alpha)
     }
     pub fn cdf(&mut self, x: f64) -> f64 {
-        return pareto4_cdf(x, self.mu, self.sigma, self.gamma, self.alpha);
+        pareto4_cdf(x, self.mu, self.sigma, self.gamma, self.alpha)
     }
     pub fn per(&mut self, x: f64) -> f64 {
-        return pareto4_per(x,self.mu, self.sigma, self.gamma, self.alpha);
+        pareto4_per(x,self.mu, self.sigma, self.gamma, self.alpha)
     }
     pub fn ran(&mut self) -> f64 {
-        return pareto4_ran(self.mu, self.sigma, self.gamma, self.alpha);
+        pareto4_ran(self.mu, self.sigma, self.gamma, self.alpha)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<f64> {
-        return pareto4_ranvec(n,self.mu, self.sigma, self.gamma, self.alpha);
+    pub fn ranvec(&mut self, n: u64) -> Vec<f64> {
+        pareto4_ranvec(n,self.mu, self.sigma, self.gamma, self.alpha)
     }
     pub fn mean(&mut self) -> f64 {
-        return self.mu + self.sigma * gamma(self.alpha-self.gamma) *
-            gamma(1.0 + self.gamma) / gamma(self.alpha);
+        self.mu + self.sigma * gamma(self.alpha-self.gamma) *
+            gamma(1.0 + self.gamma) / gamma(self.alpha)
     }
     pub fn var(&mut self) -> f64 {
-        return self.sigma.powi(2) * gamma(self.alpha - self.gamma * 2.0) *
-            gamma(1.0 + self.gamma * 2.0) / gamma(self.alpha) - self.mean().powi(2);
+        self.sigma.powi(2) * gamma(self.alpha - self.gamma * 2.0) *
+            gamma(1.0 + self.gamma * 2.0) / gamma(self.alpha) - self.mean().powi(2)
     }
     pub fn sd(&mut self) -> f64 {
-        return self.var().sqrt();
+        self.var().sqrt()
     }
 }
 
@@ -1866,8 +1787,8 @@ pub fn pareto4_pdf(x: f64, mu: f64, sigma: f64, gamma: f64, alpha: f64) -> f64 {
     if x < mu {
         return 0.0;
     }
-    return (alpha/(gamma*sigma))*((x-mu)/sigma).powf(1.0/gamma - 1.0)*
-        (1.0 + ((x-mu)/sigma).powf(1.0/gamma)).powf(-alpha-1.0);
+    (alpha/(gamma*sigma))*((x-mu)/sigma).powf(1.0/gamma - 1.0)*
+        (1.0 + ((x-mu)/sigma).powf(1.0/gamma)).powf(-alpha-1.0)
 }
 
 
@@ -1895,7 +1816,7 @@ pub fn pareto4_cdf(x: f64, mu: f64, sigma: f64, gamma: f64, alpha: f64) -> f64 {
         return 0.0;
     }
 
-    return 1.0 - (1.0 + ((x-mu)/sigma).powf(1.0/gamma)).powf(-alpha);
+    1.0 - (1.0 + ((x-mu)/sigma).powf(1.0/gamma)).powf(-alpha)
 }
 
 
@@ -1917,7 +1838,7 @@ pub fn pareto4_cdf(x: f64, mu: f64, sigma: f64, gamma: f64, alpha: f64) -> f64 {
 /// println!("Percentile: {}", pareto4_per(0.8, 0.0, 1.0, 2.0, 0.5));
 /// ```
 pub fn pareto4_per(p: f64, mu: f64, sigma: f64, gamma: f64, alpha: f64) -> f64 {
-    return mu + sigma * ((1.0-p).powf(-1.0/alpha) - 1.0).powf(gamma);
+    mu + sigma * ((1.0-p).powf(-1.0/alpha) - 1.0).powf(gamma)
 }
 
 
@@ -1937,7 +1858,7 @@ pub fn pareto4_per(p: f64, mu: f64, sigma: f64, gamma: f64, alpha: f64) -> f64 {
 /// println!("Random draw: {}", pareto4_ran(0.0, 1.0, 2.0, 0.5));
 /// ```
 pub fn pareto4_ran(mu: f64, sigma: f64, gamma: f64, alpha: f64) -> f64 {
-    return mu + sigma * ((1.0-unif_ran(0.0, 1.0)).powf(-1.0/alpha) - 1.0).powf(gamma);
+    mu + sigma * ((1.0-unif_ran(0.0, 1.0)).powf(-1.0/alpha) - 1.0).powf(gamma)
 }
 
 
@@ -1956,12 +1877,12 @@ pub fn pareto4_ran(mu: f64, sigma: f64, gamma: f64, alpha: f64) -> f64 {
 /// use ruststat::pareto4_ranvec;
 /// println!("Random Vec: {:?}", pareto4_ranvec(10, 0.0, 1.0, 2.0, 0.5));
 /// ```
-pub fn pareto4_ranvec(n: i32, mu: f64, sigma: f64, gamma: f64, alpha: f64) -> Vec<f64> {
+pub fn pareto4_ranvec(n: u64, mu: f64, sigma: f64, gamma: f64, alpha: f64) -> Vec<f64> {
     let mut xvec: Vec<f64> = Vec::new();
     for _ in 0..n {
         xvec.push(pareto4_ran(mu, sigma, gamma, alpha));
     }
-    return xvec;
+    xvec
 }
 
 
@@ -1996,32 +1917,32 @@ pub struct TDist {
 }
 impl TDist {
     pub fn pdf(&mut self, x: f64) -> f64 {
-        return t_pdf(x, self.nu);
+        t_pdf(x, self.nu)
     }
     pub fn cdf(&mut self, x: f64) -> f64 {
-        return t_cdf(x, self.nu);
+        t_cdf(x, self.nu)
     }
     pub fn per(&mut self, p: f64) -> f64 {
-        return t_per(p,self.nu);
+        t_per(p,self.nu)
     }
     pub fn ran(&mut self) -> f64 {
-        return t_ran(self.nu);
+        t_ran(self.nu)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<f64> {
-        return t_ranvec(n, self.nu);
+    pub fn ranvec(&mut self, n: u64) -> Vec<f64> {
+        t_ranvec(n, self.nu)
     }
     pub fn mean(&mut self) -> f64 {
-        return 0.0;
+        0.0
     }
     pub fn var(&mut self) -> f64 {
-        return if self.nu > 2.0 {
+        if self.nu > 2.0 {
             self.nu / (self.nu - 2.0)
         } else {
             f64::NAN
         }
     }
     pub fn sd(&mut self) -> f64 {
-        return if self.nu > 2.0 {
+        if self.nu > 2.0 {
             self.var().sqrt()
         } else {
             f64::NAN
@@ -2046,8 +1967,8 @@ pub fn t_pdf(x: f64, nu: f64) -> f64 {
         println!("NAN produced. Error in function t_pdf");
         return f64::NAN;
     }
-    return gamma((nu+1.0)/2.0) * (1.0 + x.powi(2)/nu).powf(-(nu+1.0)/2.0) /
-        ((nu * PI).sqrt() * gamma(nu/2.0));
+    (gamma_ln((nu+1.0)/2.0) - ((nu+1.0)/2.0)*(1.0 + x.powi(2)/nu).ln() -
+        0.5*(nu * PI).ln() - gamma_ln(nu/2.0)).exp()
 }
 
 
@@ -2069,7 +1990,7 @@ pub fn t_cdf(x: f64, nu: f64) -> f64 {
         return f64::NAN;
     }
 
-    return if x <= 0.0 {
+    if x <= 0.0 {
         0.5 * betai(nu / (nu + x * x), nu / 2.0, 0.5)
     } else {
         1.0 - 0.5 * betai(nu / (nu + x * x), nu / 2.0, 0.5)
@@ -2093,7 +2014,7 @@ pub fn t_cdf(x: f64, nu: f64) -> f64 {
 /// ```
 pub fn t_per(p: f64, nu: f64) -> f64 {
     let (a, x): (f64, f64);
-    return if p <= 0.5 {
+    if p <= 0.5 {
         a = betai_inv(2.0 * p, nu / 2.0, 1.0 / 2.0);
         x = (nu / a - nu).sqrt();
         -x
@@ -2118,8 +2039,8 @@ pub fn t_per(p: f64, nu: f64) -> f64 {
 /// println!("Random draw: {}", t_ran(25.0));
 /// ```
 pub fn t_ran(nu: f64) -> f64 {
-    return normal_ran(0.0, 1.0) *
-        (nu / gamma_ran(nu/2.0, 1.0/2.0)).sqrt();
+    normal_ran(0.0, 1.0) *
+        (nu / gamma_ran(nu/2.0, 1.0/2.0)).sqrt()
 }
 
 
@@ -2135,12 +2056,12 @@ pub fn t_ran(nu: f64) -> f64 {
 /// use ruststat::t_ranvec;
 /// println!("Random Vec: {:?}", t_ranvec(10, 25.0));
 /// ```
-pub fn t_ranvec(n: i32, nu: f64) -> Vec<f64> {
+pub fn t_ranvec(n: u64, nu: f64) -> Vec<f64> {
     let mut xvec: Vec<f64> = Vec::new();
     for _ in 0..n {
         xvec.push(t_ran(nu));
     }
-    return xvec;
+    xvec
 }
 
 
@@ -2178,28 +2099,28 @@ pub struct UnifDist {
 }
 impl UnifDist {
     pub fn pdf(&mut self, x: f64) -> f64 {
-        return unif_pdf(x, self.a, self.b);
+        unif_pdf(x, self.a, self.b)
     }
     pub fn cdf(&mut self, x: f64) -> f64 {
-        return unif_cdf(x, self.a, self.b);
+        unif_cdf(x, self.a, self.b)
     }
     pub fn per(&mut self, x: f64) -> f64 {
-        return unif_per(x,self.a, self.b);
+        unif_per(x,self.a, self.b)
     }
     pub fn ran(&mut self) -> f64 {
-        return unif_ran(self.a, self.b);
+        unif_ran(self.a, self.b)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<f64> {
-        return unif_ranvec(n, self.a, self.b);
+    pub fn ranvec(&mut self, n: u64) -> Vec<f64> {
+        unif_ranvec(n, self.a, self.b)
     }
     pub fn mean(&mut self) -> f64 {
-        return (self.a + self.b) / 2.0;
+        (self.a + self.b) / 2.0
     }
     pub fn var(&mut self) -> f64 {
-        return (self.b - self.a).powi(2) / 12.0;
+        (self.b - self.a).powi(2) / 12.0
     }
     pub fn sd(&mut self) -> f64 {
-        return self.var().sqrt();
+        self.var().sqrt()
     }
 }
 
@@ -2225,7 +2146,7 @@ pub fn unif_pdf(x: f64, a: f64, b: f64) -> f64 {
     if x < a || x > b {
         return 0.0;
     }
-    return 1.0 / (b - a);
+    1.0 / (b - a)
 }
 
 
@@ -2255,7 +2176,7 @@ pub fn unif_cdf(x: f64, a: f64, b: f64) -> f64 {
         return 1.0;
     }
 
-    return (x - a) / (b - a);
+    (x - a) / (b - a)
 }
 
 
@@ -2276,9 +2197,13 @@ pub fn unif_cdf(x: f64, a: f64, b: f64) -> f64 {
 /// println!("Percentile: {}", unif_per(0.8, 0.0, 1.0));
 /// ```
 pub fn unif_per(p: f64, a: f64, b: f64) -> f64 {
-    return a + p*(b-a);
-}
+    if a >= b || p < 0.0 || p > 1.0 {
+        println!("NAN produced. Error in function unif_per");
+        return f64::NAN;
+    }
 
+    a + p * (b - a)
+}
 
 /// Random draw from `X ~ Unif(a,b)` distribution.
 ///
@@ -2298,7 +2223,7 @@ pub fn unif_ran(a: f64, b: f64) -> f64 {
     let u: f64;
     u = random();
     // u = rand::thread_rng().gen();
-    return a + u * (b-a);
+    a + u * (b-a)
 }
 
 
@@ -2316,14 +2241,15 @@ pub fn unif_ran(a: f64, b: f64) -> f64 {
 /// use ruststat::unif_ranvec;
 /// println!("Random Vec: {:?}", unif_ranvec(10, 0.0, 1.0));
 /// ```
-pub fn unif_ranvec(n: i32, a: f64, b: f64) -> Vec<f64> {
-    let mut xvec: Vec<f64> = Vec::new();
-    for _ in 0..n {
-        xvec.push(unif_ran(a,b));
-    }
-    return xvec;
-}
+pub fn unif_ranvec(n: u64, a: f64, b: f64) -> Vec<f64> {
+    // Tell Rust exactly how much memory we need upfront
+    let mut xvec: Vec<f64> = Vec::with_capacity(n as usize);
 
+    for _ in 0..n {
+        xvec.push(unif_ran(a, b)); // Now it just pushes without ever resizing
+    }
+    xvec
+}
 
 
 // ==========================================
@@ -2341,7 +2267,7 @@ pub fn unif_ranvec(n: i32, a: f64, b: f64) -> Vec<f64> {
 // ==========================================
 // ==========================================
 
-/// Struct for the binomial distirubion `X ~ Bin(n,p)`.
+/// Struct for the binomial distribution `X ~ Bin(n,p)`.
 ///
 /// # Parameters
 /// - `n` = number of trials (`n = 1,2,...`)
@@ -2363,33 +2289,33 @@ pub fn unif_ranvec(n: i32, a: f64, b: f64) -> Vec<f64> {
 /// println!("Standard deviation: {}", mybin.sd());
 /// ```
 pub struct BinDist {
-    pub n: i32,
+    pub n: u64,
     pub p: f64,
 }
 impl BinDist {
-    pub fn pmf(&mut self, x: i32) -> f64 {
-        return bin_pmf(x, self.n, self.p);
+    pub fn pmf(&mut self, x: u64) -> f64 {
+        bin_pmf(x, self.n, self.p)
     }
-    pub fn cdf(&mut self, x: i32) -> f64 {
-        return bin_cdf(x, self.n, self.p);
+    pub fn cdf(&mut self, x: u64) -> f64 {
+        bin_cdf(x, self.n, self.p)
     }
-    pub fn per(&mut self, q: f64) -> i32 {
-        return bin_per(q, self.n, self.p);
+    pub fn per(&mut self, q: f64) -> u64 {
+        bin_per(q, self.n, self.p)
     }
-    pub fn ran(&mut self) -> i32 {
-        return bin_ran(self.n, self.p);
+    pub fn ran(&mut self) -> u64 {
+        bin_ran(self.n, self.p)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<i32> {
-        return bin_ranvec(n, self.n, self.p);
+    pub fn ranvec(&mut self, n: u64) -> Vec<u64> {
+        bin_ranvec(n, self.n, self.p)
     }
     pub fn mean(&mut self) -> f64 {
-        return (self.n as f64) * self.p;
+        (self.n as f64) * self.p
     }
     pub fn var(&mut self) -> f64 {
-        return (self.n as f64) * self.p * (1.0-self.p);
+        (self.n as f64) * self.p * (1.0-self.p)
     }
     pub fn sd(&mut self) -> f64 {
-        return self.var().sqrt();
+        self.var().sqrt()
     }
 }
 
@@ -2407,17 +2333,26 @@ impl BinDist {
 /// use ruststat::bin_pmf;
 /// println!("P(X=x): {}", bin_pmf(7, 10, 0.6));
 /// ```
-pub fn bin_pmf(x: i32, n: i32, p: f64) -> f64 {
+pub fn bin_pmf(x: u64, n: u64, p: f64) -> f64 {
     if n <= 0 || p < 0.0 || p > 1.0 {
         println!("NAN produced. Error in function bin_pmf");
         return f64::NAN;
     }
-    if x < 0 || x > n {
+    if x > n {
         return 0.0;
     }
-    return comb(n, x) * p.powi(x) * (1.0-p).powi(n-x);
-}
 
+    // --- The Edge Case Patch ---
+    if p == 0.0 {
+        return if x == 0 { 1.0 } else { 0.0 };
+    }
+    if p == 1.0 {
+        return if x == n { 1.0 } else { 0.0 };
+    }
+    // ---------------------------
+
+    (factln_i(n) - factln_i(x) - factln_i(n-x) + x as f64 * p.ln() + (n-x) as f64 * (1.0-p).ln()).exp()
+}
 
 /// Computes cumulative distribution function (cdf) for `X ~ Bin(n,p)`
 ///
@@ -2432,13 +2367,10 @@ pub fn bin_pmf(x: i32, n: i32, p: f64) -> f64 {
 /// use ruststat::bin_cdf;
 /// println!("P(X<=x): {}", bin_cdf(7, 10, 0.6));
 /// ```
-pub fn bin_cdf(x: i32, n: i32, p: f64) -> f64 {
+pub fn bin_cdf(x: u64, n: u64, p: f64) -> f64 {
     if n <= 0 || p < 0.0 || p > 1.0 {
         println!("NAN produced. Error in function bin_cdf");
         return f64::NAN;
-    }
-    if x < 0 {
-        return 0.0;
     }
     if x > n {
         return 1.0;
@@ -2448,7 +2380,7 @@ pub fn bin_cdf(x: i32, n: i32, p: f64) -> f64 {
     for i in 0..=x {
         sum += bin_pmf(i, n, p);
     }
-    return if sum < 1.0 {
+    if sum < 1.0 {
         sum
     } else {
         1.0
@@ -2470,12 +2402,12 @@ pub fn bin_cdf(x: i32, n: i32, p: f64) -> f64 {
 /// use ruststat::bin_per;
 /// println!("Percentile: {}", bin_per(0.8, 10, 0.6));
 /// ```
-pub fn bin_per(q: f64, n: i32, p: f64) -> i32 {
+pub fn bin_per(q: f64, n: u64, p: f64) -> u64 {
     let mut x = 0;
 
     if n <= 0 || p < 0.0 || p > 1.0 || q < 0.0 || q > 1.0 {
         println!("NAN produced. Error in function bin_per");
-        return f64::NAN as i32;
+        return f64::NAN as u64;
     }
     if q == 0.0 {
         return 0;
@@ -2487,7 +2419,7 @@ pub fn bin_per(q: f64, n: i32, p: f64) -> i32 {
     while bin_cdf(x, n, p) < q {
         x += 1;
     }
-    return x;
+    x
 }
 
 
@@ -2504,11 +2436,11 @@ pub fn bin_per(q: f64, n: i32, p: f64) -> i32 {
 /// use ruststat::bin_ran;
 /// println!("Random draw: {}", bin_ran(10, 0.6));
 /// ```
-pub fn bin_ran(n: i32, p: f64) -> i32 {
+pub fn bin_ran(n: u64, p: f64) -> u64 {
 
     if n <= 0 || p < 0.0 || p > 1.0 {
         println!("NAN produced. Error in function bin_ran");
-        return f64::NAN as i32;
+        return f64::NAN as u64;
     }
     if p == 0.0 {
         return 0;
@@ -2521,7 +2453,7 @@ pub fn bin_ran(n: i32, p: f64) -> i32 {
     u = unif_ran(0.0, 1.0);
     let c = p / (1.0 - p);
     let mut i = 0;
-    let mut pr = (1.0 - p).powi(n);
+    let mut pr = (1.0 - p).powi(n as i32);
     let mut f = pr;
     loop {
         if u < f {
@@ -2531,15 +2463,6 @@ pub fn bin_ran(n: i32, p: f64) -> i32 {
         f = f + pr;
         i = i + 1;
     }
-
-    // let cdf = rand::thread_rng().gen();
-    // let mut x = 0;
-    //
-    // while bin_cdf(x, n, p) < cdf {
-    //     x += 1;
-    // }
-    //
-    // return x;
 }
 
 /// Save random draws from `X ~ Bin(n,p)` distribution into a `Vec`
@@ -2552,12 +2475,12 @@ pub fn bin_ran(n: i32, p: f64) -> i32 {
 /// use ruststat::bin_ranvec;
 /// println!("Random Vec: {:?}", bin_ranvec(10, 10, 0.6));
 /// ```
-pub fn bin_ranvec(nn: i32, n: i32, p: f64) -> Vec<i32> {
-    let mut xvec: Vec<i32> = Vec::new();
+pub fn bin_ranvec(nn: u64, n: u64, p: f64) -> Vec<u64> {
+    let mut xvec: Vec<u64> = Vec::new();
     for _ in 0..nn {
         xvec.push(bin_ran(n,p));
     }
-    return xvec;
+    xvec
 }
 
 
@@ -2592,29 +2515,29 @@ pub struct GeoDist {
     pub p: f64,
 }
 impl GeoDist {
-    pub fn pmf(&mut self, x: i32) -> f64 {
-        return geo_pmf(x, self.p);
+    pub fn pmf(&mut self, x: u64) -> f64 {
+        geo_pmf(x, self.p)
     }
-    pub fn cdf(&mut self, x: i32) -> f64 {
-        return geo_cdf(x, self.p);
+    pub fn cdf(&mut self, x: u64) -> f64 {
+        geo_cdf(x, self.p)
     }
-    pub fn per(&mut self, q: f64) -> i32 {
-        return geo_per(q, self.p);
+    pub fn per(&mut self, q: f64) -> u64 {
+        geo_per(q, self.p)
     }
-    pub fn ran(&mut self) -> i32 {
-        return geo_ran(self.p);
+    pub fn ran(&mut self) -> u64 {
+        geo_ran(self.p)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<i32> {
-        return geo_ranvec(n, self.p);
+    pub fn ranvec(&mut self, n: u64) -> Vec<u64> {
+        geo_ranvec(n, self.p)
     }
     pub fn mean(&mut self) -> f64 {
-        return (1.0 - self.p) / self.p;
+        (1.0 - self.p) / self.p
     }
     pub fn var(&mut self) -> f64 {
-        return (1.0 - self.p) / self.p.powi(2);
+        (1.0 - self.p) / self.p.powi(2)
     }
     pub fn sd(&mut self) -> f64 {
-        return self.var().sqrt();
+        self.var().sqrt()
     }
 }
 
@@ -2632,15 +2555,22 @@ impl GeoDist {
 /// use ruststat::geo_pmf;
 /// println!("P(X=x): {}", geo_pmf(3, 0.6));
 /// ```
-pub fn geo_pmf(x: i32, p: f64) -> f64 {
-    if p <= 0.0 || p > 1.0 {
+pub fn geo_pmf(x: u64, p: f64) -> f64 {
+    if p < 0.0 || p > 1.0 { // Note: changed p <= 0.0 to p < 0.0 to allow the 0.0 check
         println!("NAN produced. Error in function geo_pmf");
         return f64::NAN;
     }
-    if x < 0 {
+
+    // --- The Edge Case Fast Paths ---
+    if p == 0.0 {
         return 0.0;
     }
-    return (1.0-p).powi(x) * p;
+    if p == 1.0 {
+        return if x == 0 { 1.0 } else { 0.0 };
+    }
+    // --------------------------------
+
+    (1.0-p).powi(x as i32) * p
 }
 
 
@@ -2657,20 +2587,18 @@ pub fn geo_pmf(x: i32, p: f64) -> f64 {
 /// use ruststat::geo_cdf;
 /// println!("P(X<=x): {}", geo_cdf(3, 0.6));
 /// ```
-pub fn geo_cdf(x: i32, p: f64) -> f64 {
+pub fn geo_cdf(x: u64, p: f64) -> f64 {
     if p <= 0.0 || p > 1.0 {
         println!("NAN produced. Error in function geo_pmf");
         return f64::NAN;
-    }
-    if x < 0 {
-        return 0.0;
     }
 
     let mut sum = 0.0;
     for i in 0..=x {
         sum += geo_pmf(i, p);
     }
-    return sum;
+
+    sum
 }
 
 
@@ -2689,24 +2617,25 @@ pub fn geo_cdf(x: i32, p: f64) -> f64 {
 /// use ruststat::geo_per;
 /// println!("Percentile: {}", geo_per(0.8, 0.6));
 /// ```
-pub fn geo_per(q: f64, p: f64) -> i32 {
+pub fn geo_per(q: f64, p: f64) -> u64 {
     let mut x = 0;
 
     if p <= 0.0 || p > 1.0 || q < 0.0 || q > 1.0 {
         println!("NAN produced. Error in function geo1_per");
-        return f64::NAN as i32;
+        return f64::NAN as u64;
     }
     if q == 0.0 {
         return 0;
     }
     if q == 1.0 {
-        return i32::MAX;
+        return u64::MAX;
     }
 
     while geo_cdf(x, p) < q {
         x += 1;
     }
-    return x;
+
+    x
 }
 
 
@@ -2721,23 +2650,16 @@ pub fn geo_per(q: f64, p: f64) -> i32 {
 /// use ruststat::geo_ran;
 /// println!("Random draw: {}", geo_ran(0.6));
 /// ```
-pub fn geo_ran(p: f64) -> i32 {
+pub fn geo_ran(p: f64) -> u64 {
 
     if p <= 0.0 || p > 1.0 {
         println!("NAN produced. Error in function geo1_ran");
-        return f64::NAN as i32;
+        return f64::NAN as u64;
     }
 
     let u = unif_ran(0.0, 1.0);
-    return (u.ln() / (1.0-p).ln()).floor() as i32;
 
-    // let cdf = unif_ran(0.0, 1.0);
-    // let mut x = 0;
-    //
-    // while geo_cdf(x, p) < cdf {
-    //     x += 1;
-    // }
-    // return x;
+    (u.ln() / (1.0-p).ln()).floor() as u64
 }
 
 
@@ -2750,12 +2672,12 @@ pub fn geo_ran(p: f64) -> i32 {
 /// use ruststat::geo_ranvec;
 /// println!("Random Vec: {:?}", geo_ranvec(10, 0.6));
 /// ```
-pub fn geo_ranvec(nn: i32, p: f64) -> Vec<i32> {
-    let mut xvec: Vec<i32> = Vec::new();
+pub fn geo_ranvec(nn: u64, p: f64) -> Vec<u64> {
+    let mut xvec: Vec<u64> = Vec::new();
     for _ in 0..nn {
         xvec.push(geo_ran(p));
     }
-    return xvec;
+    xvec
 }
 
 
@@ -2790,29 +2712,29 @@ pub struct Geo2Dist {
     pub p: f64,
 }
 impl Geo2Dist {
-    pub fn pmf(&mut self, x: i32) -> f64 {
-        return geo2_pmf(x, self.p);
+    pub fn pmf(&mut self, x: u64) -> f64 {
+        geo2_pmf(x, self.p)
     }
-    pub fn cdf(&mut self, x: i32) -> f64 {
-        return geo2_cdf(x, self.p);
+    pub fn cdf(&mut self, x: u64) -> f64 {
+        geo2_cdf(x, self.p)
     }
-    pub fn per(&mut self, q: f64) -> i32 {
-        return geo2_per(q, self.p);
+    pub fn per(&mut self, q: f64) -> u64 {
+        geo2_per(q, self.p)
     }
-    pub fn ran(&mut self) -> i32 {
-        return geo2_ran(self.p);
+    pub fn ran(&mut self) -> u64 {
+        geo2_ran(self.p)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<i32> {
-        return geo2_ranvec(n, self.p);
+    pub fn ranvec(&mut self, n: u64) -> Vec<u64> {
+        geo2_ranvec(n, self.p)
     }
     pub fn mean(&mut self) -> f64 {
-        return 1.0 / self.p;
+        1.0 / self.p
     }
     pub fn var(&mut self) -> f64 {
-        return (1.0 - self.p) / self.p.powi(2);
+        (1.0 - self.p) / self.p.powi(2)
     }
     pub fn sd(&mut self) -> f64 {
-        return self.var().sqrt();
+        self.var().sqrt()
     }
 }
 
@@ -2830,17 +2752,26 @@ impl Geo2Dist {
 /// use ruststat::geo2_pmf;
 /// println!("P(X=x): {}", geo2_pmf(3, 0.6));
 /// ```
-pub fn geo2_pmf(x: i32, p: f64) -> f64 {
-    if p <= 0.0 || p > 1.0 {
+pub fn geo2_pmf(x: u64, p: f64) -> f64 {
+    if p < 0.0 || p > 1.0 { // Changed to p < 0.0
         println!("NAN produced. Error in function geo2_pmf");
         return f64::NAN;
     }
     if x < 1 {
         return 0.0;
     }
-    return (1.0-p).powi(x-1) * p;
-}
 
+    // --- The Edge Case Fast Paths ---
+    if p == 0.0 {
+        return 0.0;
+    }
+    if p == 1.0 {
+        return if x == 1 { 1.0 } else { 0.0 };
+    }
+    // --------------------------------
+
+    (1.0-p).powi((x-1) as i32) * p
+}
 
 /// Computes cumulative distribution function (cdf) for `X ~ Geo(p)`
 /// where `X =` the trial on which the first success is observed.
@@ -2855,7 +2786,7 @@ pub fn geo2_pmf(x: i32, p: f64) -> f64 {
 /// use ruststat::geo2_cdf;
 /// println!("P(X<=x): {}", geo2_cdf(3, 0.6));
 /// ```
-pub fn geo2_cdf(x: i32, p: f64) -> f64 {
+pub fn geo2_cdf(x: u64, p: f64) -> f64 {
     if p <= 0.0 || p > 1.0 {
         println!("NAN produced. Error in function geo2_cdf");
         return f64::NAN;
@@ -2868,7 +2799,8 @@ pub fn geo2_cdf(x: i32, p: f64) -> f64 {
     for i in 1..=x {
         sum += geo2_pmf(i, p);
     }
-    return sum;
+
+    sum
 }
 
 
@@ -2887,24 +2819,25 @@ pub fn geo2_cdf(x: i32, p: f64) -> f64 {
 /// use ruststat::geo2_per;
 /// println!("Percentile: {}", geo2_per(0.8, 0.6));
 /// ```
-pub fn geo2_per(q: f64, p: f64) -> i32 {
+pub fn geo2_per(q: f64, p: f64) -> u64 {
     let mut x = 1;
 
     if p <= 0.0 || p > 1.0 || q < 0.0 || q > 1.0 {
         println!("NAN produced. Error in function geo2_per");
-        return f64::NAN as i32;
+        return f64::NAN as u64;
     }
     if q == 0.0 {
         return 1;
     }
     if q == 1.0 {
-        return i32::MAX;
+        return u64::MAX;
     }
 
     while geo2_cdf(x, p) < q {
         x += 1;
     }
-    return x;
+
+    x
 }
 
 
@@ -2919,23 +2852,16 @@ pub fn geo2_per(q: f64, p: f64) -> i32 {
 /// use ruststat::geo2_ran;
 /// println!("Random draw: {}", geo2_ran(0.6));
 /// ```
-pub fn geo2_ran(p: f64) -> i32 {
+pub fn geo2_ran(p: f64) -> u64 {
 
     if p <= 0.0 || p > 1.0 {
         println!("NAN produced. Error in function geo2_ran");
-        return f64::NAN as i32;
+        return f64::NAN as u64;
     }
 
     let u = unif_ran(0.0, 1.0);
-    return (u.ln() / (1.0-p).ln()).floor() as i32 + 1;
 
-    // let cdf = rand::thread_rng().gen();
-    // let mut x = 1;
-    //
-    // while geo2_cdf(x, p) < cdf {
-    //     x += 1;
-    // }
-    // return x;
+    (u.ln() / (1.0-p).ln()).floor() as u64 + 1
 }
 
 /// Save random draws from `X ~ Geo(p)` distribution into a `Vec`
@@ -2949,12 +2875,13 @@ pub fn geo2_ran(p: f64) -> i32 {
 /// use ruststat::geo2_ranvec;
 /// println!("Random Vec: {:?}", geo2_ranvec(10, 0.6));
 /// ```
-pub fn geo2_ranvec(nn: i32, p: f64) -> Vec<i32> {
-    let mut xvec: Vec<i32> = Vec::new();
+pub fn geo2_ranvec(nn: u64, p: f64) -> Vec<u64> {
+    let mut xvec: Vec<u64> = Vec::new();
     for _ in 0..nn {
         xvec.push(geo2_ran(p));
     }
-    return xvec;
+
+    xvec
 }
 
 
@@ -2990,37 +2917,37 @@ pub fn geo2_ranvec(nn: i32, p: f64) -> Vec<i32> {
 /// ```
 #[allow(non_snake_case)]
 pub struct HGDist {
-    pub n: i32,
-    pub N: i32,
-    pub M: i32,
+    pub n: u64,
+    pub N: u64,
+    pub M: u64,
 }
 impl HGDist {
-    pub fn pmf(&mut self, x: i32) -> f64 {
-        return hg_pmf(x, self.n, self.N, self.M);
+    pub fn pmf(&mut self, x: u64) -> f64 {
+        hg_pmf(x, self.n, self.N, self.M)
     }
-    pub fn cdf(&mut self, x: i32) -> f64 {
-        return hg_cdf(x, self.n, self.N, self.M);
+    pub fn cdf(&mut self, x: u64) -> f64 {
+        hg_cdf(x, self.n, self.N, self.M)
     }
-    pub fn per(&mut self, q: f64) -> i32 {
-        return hg_per(q, self.n, self.N, self.M);
+    pub fn per(&mut self, q: f64) -> u64 {
+        hg_per(q, self.n, self.N, self.M)
     }
-    pub fn ran(&mut self) -> i32 {
-        return hg_ran(self.n, self.N, self.M);
+    pub fn ran(&mut self) -> u64 {
+        hg_ran(self.n, self.N, self.M)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<i32> {
-        return hg_ranvec(n, self.n, self.N, self.M);
+    pub fn ranvec(&mut self, n: u64) -> Vec<u64> {
+        hg_ranvec(n, self.n, self.N, self.M)
     }
     pub fn mean(&mut self) -> f64 {
-        return (self.n as f64) * (self.M as f64) / (self.N as f64);
+        (self.n as f64) * (self.M as f64) / (self.N as f64)
     }
     pub fn var(&mut self) -> f64 {
-        return (self.n as f64) *
+        (self.n as f64) *
             (self.M as f64) / (self.N as f64) *
             (1.0 - (self.M as f64) / (self.N as f64)) *
-            (self.N as f64 - self.n as f64) / (self.N as f64 - 1.0);
+            (self.N as f64 - self.n as f64) / (self.N as f64 - 1.0)
     }
     pub fn sd(&mut self) -> f64 {
-        return self.var().sqrt();
+        self.var().sqrt()
     }
 }
 
@@ -3043,16 +2970,29 @@ impl HGDist {
 /// println!("P(X=x): {}", hg_pmf(7, 20, 100, 50));
 /// ```
 #[allow(non_snake_case)]
-pub fn hg_pmf(x: i32, n: i32, N: i32, M: i32) -> f64 {
-    if  n < 1 || N < 1 || M < 1 || M > N || n > N {
+pub fn hg_pmf(x: u64, n: u64, N: u64, M: u64) -> f64 {
+    if  n < 1 || N < 1 || M > N || n > N { // Removed M < 1 to allow 0 successes in pop
         println!("NAN produced. Error in function hg_pmf");
         return f64::NAN;
     }
-    if x < 0 || x > n || x > M || (n-x) > (N-M) {
+    if x > n || x > M || (n-x) > (N-M) {
         return 0.0;
     }
 
-    return comb(M, x) * comb(N-M, n-x) / comb(N, n);
+    // --- The Deterministic Fast Paths ---
+    if M == 0 {
+        // No successes exist in the population
+        return if x == 0 { 1.0 } else { 0.0 };
+    }
+    if M == N {
+        // Entire population is a success
+        return if x == n { 1.0 } else { 0.0 };
+    }
+    // ------------------------------------
+
+    (fact_ln_u(M) - fact_ln_u(x) - fact_ln_u(M-x) +
+        fact_ln_u(N-M) - fact_ln_u(n-x) - fact_ln_u(N-M-n+x) -
+        fact_ln_u(N) + fact_ln_u(n) + fact_ln_u(N-n)).exp()
 }
 
 
@@ -3074,12 +3014,12 @@ pub fn hg_pmf(x: i32, n: i32, N: i32, M: i32) -> f64 {
 /// println!("P(X<=x): {}", hg_cdf(7, 20, 100, 50));
 /// ```
 #[allow(non_snake_case)]
-pub fn hg_cdf(x: i32, n: i32, N: i32, M: i32) -> f64 {
+pub fn hg_cdf(x: u64, n: u64, N: u64, M: u64) -> f64 {
     if  n < 1 || N < 1 || M < 1 || M > N || n > N {
         println!("NAN produced. Error in function hg_cdf");
         return f64::NAN;
     }
-    if x < 0 || x > M || (n-x) > (N-M) {
+    if x > M || (n-x) > (N-M) {
         return 0.0;
     }
     if x > n {
@@ -3090,7 +3030,8 @@ pub fn hg_cdf(x: i32, n: i32, N: i32, M: i32) -> f64 {
     for i in 0..=x {
         sum += hg_pmf(i, n, N, M);
     }
-    return sum;
+
+    sum
 }
 
 
@@ -3114,26 +3055,21 @@ pub fn hg_cdf(x: i32, n: i32, N: i32, M: i32) -> f64 {
 /// println!("Percentile: {}", hg_per(0.8, 20, 100, 50));
 /// ```
 #[allow(non_snake_case)]
-pub fn hg_per(q: f64, n: i32, N: i32, M: i32) -> i32 {
+pub fn hg_per(q: f64, n: u64, N: u64, M: u64) -> u64 {
     let mut x = 0;
 
     if  n < 1 || N < 1 || M < 1 ||
         M > N || n > N ||
         q < 0.0 || q > 1.0 {
         println!("NAN produced. Error in function hg_per");
-        return f64::NAN as i32;
+        return f64::NAN as u64;
     }
-    // if q == 0.0 {
-    //     return 0;
-    // }
-    // if q == 1.0 {
-    //     return n;
-    // }
 
     while hg_cdf(x, n, N, M) < q {
         x += 1;
     }
-    return x;
+
+    x
 }
 
 
@@ -3151,38 +3087,26 @@ pub fn hg_per(q: f64, n: i32, N: i32, M: i32) -> i32 {
 /// println!("Random draw: {}", hg_ran(20, 100, 50));
 /// ```
 #[allow(non_snake_case)]
-pub fn hg_ran(n: i32, N: i32, M: i32) -> i32 {
-
-    if  n < 1 || N < 1 || M < 1 ||
-        M > N || n > N {
+pub fn hg_ran(n: u64, N: u64, M: u64) -> u64 {
+    if n < 1 || N < 1 || M > N || n > N {
         println!("NAN produced. Error in function hg_ran");
-        return f64::NAN as i32;
+        return f64::NAN as u64;
     }
 
+    // 1. Generate a uniform random probability
+    let u = unif_ran(0.0, 1.0);
 
-    // use rand::seq::index::sample;
-    // use rand::seq::SliceRandom;
-    use rand::rng;
+    // 2. Start at the lowest possible number of successes
+    // (If we draw more items than there are failures, we MUST get some successes)
+    let mut x = if n > N - M { n - (N - M) } else { 0 };
 
-    let mut rng = rng();
+    // 3. Walk up the CDF until we cross our random threshold
+    while hg_cdf(x, n, N, M) < u {
+        x += 1;
+    }
 
-    let popn = Vec::from_iter(1..=N);
-    let sample = popn.choose_multiple(&mut rng, n as usize);
-    // let sample = popn.choose_multiple(&mut rng, n as usize);
-    let x = sample.filter(|&x| *x <= M).count();
-    return x as i32;
-    // println!("count <= M: {}", sample.filter(|&x| *x <= M).count());
-
-
-    // let cdf = rand::thread_rng().gen();
-    // let mut x = 0;
-    //
-    // while hg_cdf(x, n, N, M) < cdf {
-    //     x += 1;
-    // }
-    // return x;
+    x
 }
-
 
 /// Save random draws from `X ~ HG(n,N,M)` distribution into a `Vec`
 /// where `X =` the number of successes.
@@ -3198,12 +3122,12 @@ pub fn hg_ran(n: i32, N: i32, M: i32) -> i32 {
 /// println!("Random Vec: {:?}", hg_ranvec(10, 20, 100, 50));
 /// ```
 #[allow(non_snake_case)]
-pub fn hg_ranvec(nn: i32, n: i32, N: i32, M: i32) -> Vec<i32> {
-    let mut xvec: Vec<i32> = Vec::new();
+pub fn hg_ranvec(nn: u64, n: u64, N: u64, M: u64) -> Vec<u64> {
+    let mut xvec: Vec<u64> = Vec::new();
     for _ in 0..nn {
         xvec.push(hg_ran(n,N,M));
     }
-    return xvec;
+    xvec
 }
 
 
@@ -3236,33 +3160,33 @@ pub fn hg_ranvec(nn: i32, n: i32, N: i32, M: i32) -> Vec<i32> {
 /// println!("Standard deviation: {}", mynb.sd());
 /// ```
 pub struct NBDist {
-    pub r: i32,
+    pub r: u64,
     pub p: f64,
 }
 impl NBDist {
-    pub fn pmf(&mut self, x: i32) -> f64 {
-        return nb_pmf(x, self.r, self.p);
+    pub fn pmf(&mut self, x: u64) -> f64 {
+        nb_pmf(x, self.r, self.p)
     }
-    pub fn cdf(&mut self, x: i32) -> f64 {
-        return nb_cdf(x, self.r, self.p);
+    pub fn cdf(&mut self, x: u64) -> f64 {
+        nb_cdf(x, self.r, self.p)
     }
-    pub fn per(&mut self, q: f64) -> i32 {
-        return nb_per(q, self.r, self.p);
+    pub fn per(&mut self, q: f64) -> u64 {
+        nb_per(q, self.r, self.p)
     }
-    pub fn ran(&mut self) -> i32 {
-        return nb_ran(self.r, self.p);
+    pub fn ran(&mut self) -> u64 {
+        nb_ran(self.r, self.p)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<i32> {
-        return nb_ranvec(n, self.r, self.p);
+    pub fn ranvec(&mut self, n: u64) -> Vec<u64> {
+        nb_ranvec(n, self.r, self.p)
     }
     pub fn mean(&mut self) -> f64 {
-        return (self.r as f64) * (1.0 - self.p) / self.p;
+        (self.r as f64) * (1.0 - self.p) / self.p
     }
     pub fn var(&mut self) -> f64 {
-        return (self.r as f64) * (1.0 - self.p) / self.p.powi(2);
+        (self.r as f64) * (1.0 - self.p) / self.p.powi(2)
     }
     pub fn sd(&mut self) -> f64 {
-        return self.var().sqrt();
+        self.var().sqrt()
     }
 }
 
@@ -3281,17 +3205,21 @@ impl NBDist {
 /// use ruststat::nb_pmf;
 /// println!("P(X=x): {}", nb_pmf(3, 2, 0.6));
 /// ```
-pub fn nb_pmf(x: i32, r: i32, p: f64) -> f64 {
+pub fn nb_pmf(x: u64, r: u64, p: f64) -> f64 {
     if r < 1 || p <= 0.0 || p > 1.0  {
         println!("NAN produced. Error in function nb_pmf");
         return f64::NAN;
     }
-    if x < 0 {
-        return 0.0;
-    }
-    return comb(x+r-1, r-1) * p.powi(r) * (1.0-p).powi(x);
-}
 
+    // --- The Edge Case Patch ---
+    if p == 1.0 {
+        return if x == 0 { 1.0 } else { 0.0 };
+    }
+    // ---------------------------
+
+    (fact_ln_u(x+r-1) - fact_ln_u(r-1) - fact_ln_u(x) + (r as f64)*p.ln() +
+        (x as f64)*(1.0-p).ln()).exp()
+}
 
 /// Computes cumulative distribution function (cdf) for `X ~ NB(r,p)`
 /// where `X =` the number of failures prior to the `r`th success.
@@ -3307,20 +3235,16 @@ pub fn nb_pmf(x: i32, r: i32, p: f64) -> f64 {
 /// use ruststat::nb_cdf;
 /// println!("P(X<=x): {}", nb_cdf(3, 2, 0.6));
 /// ```
-pub fn nb_cdf(x: i32, r: i32, p: f64) -> f64 {
+pub fn nb_cdf(x: u64, r: u64, p: f64) -> f64 {
     if r < 1 || p <= 0.0 || p > 1.0  {
         println!("NAN produced. Error in function nb_cdf");
         return f64::NAN;
     }
-    if x < 0 {
-        return 0.0;
-    }
-
     let mut sum = 0.0;
     for i in 0..=x {
         sum += nb_pmf(i, r, p);
     }
-    return sum;
+    sum
 }
 
 
@@ -3340,24 +3264,24 @@ pub fn nb_cdf(x: i32, r: i32, p: f64) -> f64 {
 /// use ruststat::nb_per;
 /// println!("Percentile: {}", nb_per(0.8, 2, 0.6));
 /// ```
-pub fn nb_per(q: f64, r: i32, p: f64) -> i32 {
+pub fn nb_per(q: f64, r: u64, p: f64) -> u64 {
     let mut x = 0;
 
-    if r < 0 || p <= 0.0 || p > 1.0 || q < 0.0 || q > 1.0 {
+    if p <= 0.0 || p > 1.0 || q < 0.0 || q > 1.0 {
         println!("NAN produced. Error in function nb_per");
-        return f64::NAN as i32;
+        return f64::NAN as u64;
     }
     if q == 0.0 {
         return 0;
     }
     if q == 1.0 {
-        return i32::MAX;
+        return u64::MAX;
     }
 
     while nb_cdf(x, r, p) < q {
         x += 1;
     }
-    return x;
+    x
 }
 
 
@@ -3373,25 +3297,18 @@ pub fn nb_per(q: f64, r: i32, p: f64) -> i32 {
 /// use ruststat::nb_ran;
 /// println!("Random draw: {}", nb_ran(2, 0.6));
 /// ```
-pub fn nb_ran(r: i32, p: f64) -> i32 {
+pub fn nb_ran(r: u64, p: f64) -> u64 {
 
-    if r < 0 || p <= 0.0 || p > 1.0 {
+    if p <= 0.0 || p > 1.0 {
         println!("NAN produced. Error in function nb_ran");
-        return f64::NAN as i32;
+        return f64::NAN as u64;
     }
 
     let mut geo_vec = Vec::new();
     for _ in 0..r {
         geo_vec.push(geo_ran(p));
     }
-    return geo_vec.iter().sum();
-    // let cdf = rand::thread_rng().gen();
-    // let mut x = 0;
-    //
-    // while nb_cdf(x, r, p) < cdf {
-    //     x += 1;
-    // }
-    // return x;
+    geo_vec.iter().sum()
 }
 
 
@@ -3407,12 +3324,12 @@ pub fn nb_ran(r: i32, p: f64) -> i32 {
 /// use ruststat::nb_ranvec;
 /// println!("Random Vec: {:?}", nb_ranvec(10, 2, 0.6));
 /// ```
-pub fn nb_ranvec(nn: i32, r: i32, p: f64) -> Vec<i32> {
-    let mut xvec: Vec<i32> = Vec::new();
+pub fn nb_ranvec(nn: u64, r: u64, p: f64) -> Vec<u64> {
+    let mut xvec: Vec<u64> = Vec::new();
     for _ in 0..nn {
         xvec.push(nb_ran(r,p));
     }
-    return xvec;
+    xvec
 }
 
 
@@ -3445,33 +3362,33 @@ pub fn nb_ranvec(nn: i32, r: i32, p: f64) -> Vec<i32> {
 /// println!("Standard deviation: {}", mynb.sd());
 /// ```
 pub struct NB2Dist {
-    pub r: i32,
+    pub r: u64,
     pub p: f64,
 }
 impl NB2Dist {
-    pub fn pmf(&mut self, x: i32) -> f64 {
-        return nb2_pmf(x, self.r, self.p);
+    pub fn pmf(&mut self, x: u64) -> f64 {
+        nb2_pmf(x, self.r, self.p)
     }
-    pub fn cdf(&mut self, x: i32) -> f64 {
-        return nb2_cdf(x, self.r, self.p);
+    pub fn cdf(&mut self, x: u64) -> f64 {
+        nb2_cdf(x, self.r, self.p)
     }
-    pub fn per(&mut self, q: f64) -> i32 {
-        return nb2_per(q, self.r, self.p);
+    pub fn per(&mut self, q: f64) -> u64 {
+        nb2_per(q, self.r, self.p)
     }
-    pub fn ran(&mut self) -> i32 {
-        return nb2_ran(self.r, self.p);
+    pub fn ran(&mut self) -> u64 {
+        nb2_ran(self.r, self.p)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<i32> {
-        return nb2_ranvec(n, self.r, self.p);
+    pub fn ranvec(&mut self, n: u64) -> Vec<u64> {
+        nb2_ranvec(n, self.r, self.p)
     }
     pub fn mean(&mut self) -> f64 {
-        return (self.r as f64) / self.p;
+        (self.r as f64) / self.p
     }
     pub fn var(&mut self) -> f64 {
-        return (self.r as f64) * (1.0 - self.p) / self.p.powi(2);
+        (self.r as f64) * (1.0 - self.p) / self.p.powi(2)
     }
     pub fn sd(&mut self) -> f64 {
-        return self.var().sqrt();
+        self.var().sqrt()
     }
 }
 
@@ -3490,7 +3407,7 @@ impl NB2Dist {
 /// use ruststat::nb2_pmf;
 /// println!("P(X=x): {}", nb2_pmf(3, 2, 0.6));
 /// ```
-pub fn nb2_pmf(x: i32, r: i32, p: f64) -> f64 {
+pub fn nb2_pmf(x: u64, r: u64, p: f64) -> f64 {
     if  r < 1 || p <= 0.0 || p > 1.0 {
         println!("NAN produced. Error in function nb2_pmf");
         return f64::NAN;
@@ -3498,7 +3415,15 @@ pub fn nb2_pmf(x: i32, r: i32, p: f64) -> f64 {
     if x < r {
         return 0.0;
     }
-    return comb(x-1, r-1) * p.powi(r) * (1.0-p).powi(x-r);
+
+    // --- The Edge Case Patch ---
+    if p == 1.0 {
+        return if x == r { 1.0 } else { 0.0 };
+    }
+    // ---------------------------
+
+    (fact_ln_u(x-1) - fact_ln_u(r-1) - fact_ln_u(x-r) + (r as f64)*p.ln() +
+        ((x-r) as f64)*(1.0-p).ln()).exp()
 }
 
 
@@ -3516,7 +3441,7 @@ pub fn nb2_pmf(x: i32, r: i32, p: f64) -> f64 {
 /// use ruststat::nb2_cdf;
 /// println!("P(X<=x): {}", nb2_cdf(3, 2, 0.6));
 /// ```
-pub fn nb2_cdf(x: i32, r: i32, p: f64) -> f64 {
+pub fn nb2_cdf(x: u64, r: u64, p: f64) -> f64 {
     if  r < 1 || p <= 0.0 || p > 1.0 {
         println!("NAN produced. Error in function nb2_cdf");
         return f64::NAN;
@@ -3529,7 +3454,7 @@ pub fn nb2_cdf(x: i32, r: i32, p: f64) -> f64 {
     for i in r..=x {
         sum += nb2_pmf(i, r, p);
     }
-    return sum;
+    sum
 }
 
 
@@ -3549,24 +3474,24 @@ pub fn nb2_cdf(x: i32, r: i32, p: f64) -> f64 {
 /// use ruststat::nb2_per;
 /// println!("Percentile: {}", nb2_per(0.8, 2, 0.6));
 /// ```
-pub fn nb2_per(q: f64, r: i32, p: f64) -> i32 {
+pub fn nb2_per(q: f64, r: u64, p: f64) -> u64 {
 
     if  r < 1 || p <= 0.0 || p > 1.0 || q < 0.0 || q > 1.0 {
         println!("NAN produced. Error in function nb2_per");
-        return f64::NAN as i32;
+        return f64::NAN as u64;
     }
     if q == 0.0 {
         return r;
     }
     if q == 1.0 {
-        return f64::INFINITY as i32;
+        return f64::INFINITY as u64;
     }
 
     let mut x = r;
     while nb2_cdf(x, r, p) < q {
         x += 1;
     }
-    return x;
+    x
 }
 
 
@@ -3582,26 +3507,18 @@ pub fn nb2_per(q: f64, r: i32, p: f64) -> i32 {
 /// use ruststat::nb2_ran;
 /// println!("Random draw: {}", nb2_ran(2, 0.6));
 /// ```
-pub fn nb2_ran(r: i32, p: f64) -> i32 {
+pub fn nb2_ran(r: u64, p: f64) -> u64 {
 
     if  r < 1 || p <= 0.0 || p > 1.0 {
         println!("NAN produced. Error in function nb2_ran");
-        return f64::NAN as i32;
+        return f64::NAN as u64;
     }
 
     let mut geo2_vec = Vec::new();
     for _ in 0..r {
         geo2_vec.push(geo2_ran(p));
     }
-    return geo2_vec.iter().sum();
-
-    // let cdf = unif_ran(0.0, 1.0);
-    // let mut x = r;
-    //
-    // while nb2_cdf(x, r, p) < cdf {
-    //     x += 1;
-    // }
-    // return x;
+    geo2_vec.iter().sum()
 }
 
 
@@ -3617,12 +3534,12 @@ pub fn nb2_ran(r: i32, p: f64) -> i32 {
 /// use ruststat::nb2_ranvec;
 /// println!("Random Vec: {:?}", nb2_ranvec(10, 2, 0.6));
 /// ```
-pub fn nb2_ranvec(nn: i32, r: i32, p: f64) -> Vec<i32> {
-    let mut xvec: Vec<i32> = Vec::new();
+pub fn nb2_ranvec(nn: u64, r: u64, p: f64) -> Vec<u64> {
+    let mut xvec: Vec<u64> = Vec::new();
     for _ in 0..nn {
         xvec.push(nb2_ran(r,p));
     }
-    return xvec;
+    xvec
 }
 
 
@@ -3656,29 +3573,29 @@ pub struct PoisDist {
     pub lambda: f64,
 }
 impl PoisDist {
-    pub fn pmf(&mut self, x: i32) -> f64 {
-        return pois_pmf(x, self.lambda);
+    pub fn pmf(&mut self, x: u64) -> f64 {
+        pois_pmf(x, self.lambda)
     }
-    pub fn cdf(&mut self, x: i32) -> f64 {
-        return pois_cdf(x, self.lambda);
+    pub fn cdf(&mut self, x: u64) -> f64 {
+        pois_cdf(x, self.lambda)
     }
-    pub fn per(&mut self, q: f64) -> i32 {
-        return pois_per(q, self.lambda);
+    pub fn per(&mut self, q: f64) -> u64 {
+        pois_per(q, self.lambda)
     }
-    pub fn ran(&mut self) -> i32 {
-        return pois_ran(self.lambda);
+    pub fn ran(&mut self) -> u64 {
+        pois_ran(self.lambda)
     }
-    pub fn ranvec(&mut self, n: i32) -> Vec<i32> {
-        return pois_ranvec(n, self.lambda);
+    pub fn ranvec(&mut self, n: u64) -> Vec<u64> {
+        pois_ranvec(n, self.lambda)
     }
     pub fn mean(&mut self) -> f64 {
-        return self.lambda;
+        self.lambda
     }
     pub fn var(&mut self) -> f64 {
-        return self.lambda;
+        self.lambda
     }
     pub fn sd(&mut self) -> f64 {
-        return self.var().sqrt();
+        self.var().sqrt()
     }
 }
 
@@ -3695,19 +3612,17 @@ impl PoisDist {
 /// use ruststat::pois_pmf;
 /// println!("P(X=x): {}", pois_pmf(4, 2.5));
 /// ```
-pub fn pois_pmf(x: i32, lambda: f64) -> f64 {
+pub fn pois_pmf(x: u64, lambda: f64) -> f64 {
     if lambda <= 0.0 {
         println!("NAN produced. Error in function pois_pmf");
         return f64::NAN;
     }
-    if x < 0 {
-        return 0.0;
-    }
-    return (-lambda).exp() * lambda.powi(x) / (fact_i(x) as f64);
+    (-lambda + (x as f64)*lambda.ln() - fact_ln_u(x)).exp()
+    // return (-lambda).exp() * lambda.powi(x) / (fact_i(x) as f64);
 }
 
 
-/// Computes cumulative distriubtion function (cdf) for `X ~ Pois(lambda).`
+/// Computes cumulative distribution function (cdf) for `X ~ Pois(lambda).`
 ///
 /// # Parameters
 /// - `lambda > 0`
@@ -3719,26 +3634,12 @@ pub fn pois_pmf(x: i32, lambda: f64) -> f64 {
 /// use ruststat::pois_cdf;
 /// println!("P(X<=x): {}", pois_cdf(4, 2.5));
 /// ```
-// pub fn pois_cdf(x: i32, lambda: f64) -> f64 {
-//     if lambda <= 0.0 || x < 0 {
-//         println!("NAN produced. Error in function pois_cdf");
-//         return f64::NAN;
-//     }
-//     let mut sum = 0.0;
-//     for i in 0..=x {
-//         sum += pois_pmf(i, lambda);
-//     }
-//     return sum;
-// }
-pub fn pois_cdf(x: i32, lambda: f64) -> f64 {
+pub fn pois_cdf(x: u64, lambda: f64) -> f64 {
     if lambda <= 0.0 {
         println!("NAN produced. Error in function pois_cdf");
         return f64::NAN;
     }
-    if x < 0 {
-        return 0.0;
-    }
-    return gammq(lambda, (x+1) as f64);
+    gammq(lambda, (x+1) as f64)
 }
 
 
@@ -3756,24 +3657,24 @@ pub fn pois_cdf(x: i32, lambda: f64) -> f64 {
 /// use ruststat::pois_per;
 /// println!("Percentile: {}", pois_per(2.5, 0.8));
 /// ```
-pub fn pois_per(q: f64, lambda: f64) -> i32 {
+pub fn pois_per(q: f64, lambda: f64) -> u64 {
     let mut x = 0;
 
     if lambda <= 0.0 || q < 0.0 || q > 1.0 {
         println!("NAN produced. Error in function pois_per");
-        return f64::NAN as i32;
+        return f64::NAN as u64;
     }
     if q == 0.0 {
         return 0;
     }
     if q == 1.0 {
-        return i32::MAX;
+        return u64::MAX;
     }
 
     while pois_cdf(x, lambda) < q {
         x += 1;
     }
-    return x;
+    x
 }
 
 
@@ -3788,11 +3689,11 @@ pub fn pois_per(q: f64, lambda: f64) -> i32 {
 /// use ruststat::pois_ran;
 /// println!("Random draw: {}", pois_ran(2.5));
 /// ```
-pub fn pois_ran(lambda: f64) -> i32 {
+pub fn pois_ran(lambda: f64) -> u64 {
 
     if lambda <= 0.0 {
         println!("NAN produced. Error in function pois_ran");
-        return f64::NAN as i32;
+        return f64::NAN as u64;
     }
 
     let u = unif_ran(0.0, 1.0);
@@ -3807,28 +3708,6 @@ pub fn pois_ran(lambda: f64) -> i32 {
         f = f + p;
         i = i + 1;
     }
-    // return 0;
-    // let exp_lambda = (-lambda).exp(); //constant for terminating loop
-    // let (mut u,mut prod,mut r): (f64, f64, i32);
-    //
-    // r = -1;
-    // prod = 1.0;
-    //
-    // while (prod > exp_lambda) {
-    //     u = unif_ran(0.0, 1.0); //generate uniform variable
-    //     prod = prod * u; //update product
-    //     r += 1; //increase Poisson variable
-    // }
-    //
-    // return r;
-
-    // let cdf = unif_ran(0.0, 1.0);
-    // let mut x = 0;
-    //
-    // while pois_cdf(x, lambda) < cdf {
-    //     x += 1;
-    // }
-    // return x;
 }
 
 
@@ -3842,12 +3721,12 @@ pub fn pois_ran(lambda: f64) -> i32 {
 /// use ruststat::pois_ranvec;
 /// println!("Random Vec: {:?}", pois_ranvec(10, 2.5));
 /// ```
-pub fn pois_ranvec(nn: i32, lambda: f64) -> Vec<i32> {
-    let mut xvec: Vec<i32> = Vec::new();
+pub fn pois_ranvec(nn: u64, lambda: f64) -> Vec<u64> {
+    let mut xvec: Vec<u64> = Vec::new();
     for _ in 0..nn {
         xvec.push(pois_ran(lambda));
     }
-    return xvec;
+    xvec
 }
 
 
@@ -3882,11 +3761,11 @@ pub fn betai(x: f64, a: f64, b: f64) -> f64 {
         bt=0.0;
     }
     else {
-        bt=(gammaln(a+b)-gammaln(a)-gammaln(b) +
+        bt=(gamma_ln(a+b)-gamma_ln(a)-gamma_ln(b) +
             a*x.ln() +
             b*(1.0-x).ln()).exp();
     }
-    return if x < ((a + 1.0) / (a + b + 2.0)) {
+    if x < ((a + 1.0) / (a + b + 2.0)) {
         bt * betacf(x, a, b) / a
     } else {
         1.0 - bt * betacf(1.0 - x, b, a) / b
@@ -3899,7 +3778,7 @@ fn betacf(x: f64, a: f64, b: f64) -> f64 {
     let eps = 3.0e-7;
     let fpmin = 1.0e-30;
 
-    let mut m2: i32;
+    let mut m2: u64;
     let mut aa: f64;
     let mut c: f64;
     let mut d: f64;
@@ -3949,13 +3828,13 @@ fn betacf(x: f64, a: f64, b: f64) -> f64 {
         }
     }
     // if (m > MAXIT) nrerror("a or b too big, or MAXIT too small in betacf");
-    return h;
+    h
 }
 
 
 /// Log gamma function
 /// - `x > 0`
-pub fn gammaln(x: f64) -> f64 {
+pub fn gamma_ln(x: f64) -> f64 {
     let cof = vec![57.1562356658629235,-59.5979603554754912,
                    14.1360979747417471,-0.491913816097620199,0.339946499848118887e-4,
                    0.465236289270485756e-4,-0.983744753048795646e-4,0.158088703224912494e-3,
@@ -3963,9 +3842,9 @@ pub fn gammaln(x: f64) -> f64 {
                    0.844182239838527433e-4,-0.261908384015814087e-4,0.368991826595316234e-5];
 
     if x <= 0.0 {
-        println!("Bad argument in gammaln; returning f64::NAN");
+        println!("Bad argument in gamma_ln; returning f64::NAN");
         return f64::NAN;
-        // panic!("bad ard in gammaln");
+        // panic!("bad ard in gamma_ln");
     }
 
     let mut y= x;
@@ -3977,21 +3856,21 @@ pub fn gammaln(x: f64) -> f64 {
     for j in 0..14 {
         ser += cof[j] / { y += 1.0; y};
     }
-    return tmp + (2.5066282746310005 * ser / z).ln();
+    tmp + (2.5066282746310005 * ser / z).ln()
 }
 
 
 /// Gamma function
 /// - `x > 0`
 pub fn gamma(x: f64) -> f64 {
-    return gammaln(x).exp();
+    gamma_ln(x).exp()
 }
 
 
-/// Factorial (`i32`).
+/// Factorial (`u64`).
 /// - `x = 1,2,3,...`
-pub fn fact_i(x: i32) -> i32 {
-    return if x > 1 {
+pub fn fact_i(x: u64) -> u64 {
+    if x > 1 {
         x * fact_i(x - 1)
     } else {
         1
@@ -3999,11 +3878,22 @@ pub fn fact_i(x: i32) -> i32 {
 }
 
 
-/// Log factorial (`i32`).
+/// Log factorial (`u64`).
 /// - `x = 1,2,3,...`
-pub fn factln_i(x: i32) -> f64 {
-    return if x > 1 {
+pub fn factln_i(x: u64) -> f64 {
+    if x > 1 {
         (x as f64).ln() + factln_i(x - 1)
+    } else {
+        0.0
+    }
+}
+
+
+/// Log factorial (`u64`).
+/// - `x = 1,2,3,...`
+pub fn fact_ln_u(x: u64) -> f64 {
+    if x > 1 {
+        (x as f64).ln() + fact_ln_u(x - 1)
     } else {
         0.0
     }
@@ -4013,7 +3903,7 @@ pub fn factln_i(x: i32) -> f64 {
 /// Generalized factorial (`f64`).
 /// - `x > 0`
 pub fn fact_f(x: f64) -> f64 {
-    return if x > 1.0 {
+    if x > 1.0 {
         x * fact_f(x - 1.0)
     } else {
         x * gamma(x)
@@ -4024,10 +3914,10 @@ pub fn fact_f(x: f64) -> f64 {
 /// Log Generalized factorial (`f64`).
 /// - `x > 0`
 pub fn factln_f(x: f64) -> f64 {
-    return if x > 1.0 {
+    if x > 1.0 {
         x.ln() + fact_f(x - 1.0).ln()
     } else {
-        x + gammaln(x)
+        x + gamma_ln(x)
     }
 }
 
@@ -4036,8 +3926,17 @@ pub fn factln_f(x: f64) -> f64 {
 /// - `n = 0,1,2,...`
 /// - `x = 0,1,2,...`
 /// - `n >= x`
-pub fn comb(n: i32, x: i32) -> f64 {
-    return (0.5 + (factln_i(n) - factln_i(x) - factln_i(n-x)).exp()).floor();
+pub fn comb(n: u64, x: u64) -> f64 {
+    (0.5 + (factln_i(n) - factln_i(x) - factln_i(n-x)).exp()).floor()
+}
+
+
+/// Log-Combination
+/// - `n = 0,1,2,...`
+/// - `x = 0,1,2,...`
+/// - `n >= x`
+pub fn combln(n: u64, x: u64) -> f64 {
+    factln_i(n) - factln_i(x) - factln_i(n-x)
 }
 
 
@@ -4045,7 +3944,15 @@ pub fn comb(n: i32, x: i32) -> f64 {
 /// - `a > 0`
 /// - `b > 0`
 pub fn beta_fn(a: f64, b:f64) -> f64 {
-    return (gammaln(a) + gammaln(b) - gammaln(a+b)).exp();
+    (gamma_ln(a) + gamma_ln(b) - gamma_ln(a+b)).exp()
+}
+
+
+/// Computes log beta function.
+/// - `a > 0`
+/// - `b > 0`
+pub fn beta_fn_ln(a: f64, b:f64) -> f64 {
+    gamma_ln(a) + gamma_ln(b) - gamma_ln(a+b)
 }
 
 
@@ -4054,7 +3961,7 @@ pub fn gser(x: f64, a: f64) -> f64 {
     let imax = 100;
     let eps = 3.0e-7;
     // let fpmin = 1.0e-30;
-    let gln = gammaln(a);
+    let gln = gamma_ln(a);
 
     if x <= 0.0 {
         if x < 0.0 {
@@ -4077,7 +3984,7 @@ pub fn gser(x: f64, a: f64) -> f64 {
         }
         println!("a too large, ITMAX too small in routine gser");
     }
-    return 0.0;
+    0.0
 }
 
 
@@ -4087,7 +3994,7 @@ pub fn gcf(x: f64, a: f64) -> f64 {
     let eps = 3.0e-7;
     let fpmin = 1.0e-30;
 
-    let gln = gammaln(a);
+    let gln = gamma_ln(a);
     let mut b= x + 1.0 - a;
     let mut c = 1.0 / fpmin;
     let mut d= 1.0 / b;
@@ -4118,29 +4025,83 @@ pub fn gcf(x: f64, a: f64) -> f64 {
     //     println!("a too large, ITMAX too small in gcf");
     // }
 
-    return (-x + a * x.ln() - gln).exp() * h;
+    (-x + a * x.ln() - gln).exp() * h
+}
+
+pub fn gcf_ln(x: f64, a: f64) -> f64 {
+    let imax = 100;
+    let eps = 3.0e-7;
+    let fpmin = 1.0e-30;
+
+    let gln = gamma_ln(a);
+    let mut b= x + 1.0 - a;
+    let mut c = 1.0 / fpmin;
+    let mut d= 1.0 / b;
+    let mut h= d;
+
+    let mut an: f64;
+    let mut del: f64;
+
+    for i in 1..=imax {
+        an = -(i as f64) * (i as f64 - a);
+        b += 2.0;
+        d = an * d + b;
+        if d.abs() < fpmin {
+            d = fpmin;
+        }
+        c = b + an / c;
+        if c.abs() < fpmin {
+            c=fpmin;
+        }
+        d = 1.0 / d;
+        del = d * c;
+        h *= del;
+        if (del-1.0).abs() < eps {
+            break;
+        }
+    }
+    // if (i > imax) {
+    //     println!("a too large, ITMAX too small in gcf");
+    // }
+
+    (-x + a * x.ln() - gln) + h.ln()
 }
 
 
 /// Incomplete gamma function `P(x,a)`
+// pub fn gammp(x: f64, a: f64) -> f64 {
+//     if x < 0.0 || a <= 0.0 {
+//         println ! ("Invalid arguments in routine gammp");
+//     }
+//     if x < (a + 1.0) {
+//         gser(x, a)
+//     } else {
+//         1.0 - gcf(x, a)
+//     }
+// }
 pub fn gammp(x: f64, a: f64) -> f64 {
     if x < 0.0 || a <= 0.0 {
-        println ! ("Invalid arguments in routine gammp");
+        println!("Invalid arguments in routine gammp");
+        return f64::NAN;
     }
-    return if x < (a + 1.0) {
-        gser(x, a)
+    if x == 0.0 {
+        0.0
+    } else if a >= 100.0 {
+        return 1.0 - gammapprox(x, a); // <-- The crucial correction!
+    } else if x < (a + 1.0) {
+        return gser(x, a);
     } else {
-        1.0 - gcf(x, a)
+        return 1.0 - gcf(x, a);
     }
 }
 
 
-/// Complmentary incomplete gamma function `Q(x,a)`
+/// Complementary incomplete gamma function `Q(x,a)`
 pub fn gammq(x: f64, a: f64) -> f64 {
     if x < 0.0 || a <= 0.0 {
         println!("Invalid arguments in routine gammq");
     }
-    return if x == 0.0 {
+    if x == 0.0 {
         1.0
     } else if a >= 100.0 {
         gammapprox(x, a)
@@ -4185,9 +4146,9 @@ pub fn gammapprox(x: f64, a: f64) -> f64 {
         t = x + (xu-x)*Y_VEC[j];
         sum += W_VEC[j]*(-(t-a1)+a1*(t.ln()-lna1)).exp();
     }
-    ans = sum*(xu-x)*(a1*(a1.ln()-1.0)-gammaln(a)).exp();
+    ans = sum*(xu-x)*(a1*(a1.ln()-1.0)-gamma_ln(a)).exp();
 
-    return if ans >= 0.0 {
+    if ans >= 0.0 {
         ans
     } else {
         1.0 + ans
@@ -4198,7 +4159,7 @@ pub fn gammapprox(x: f64, a: f64) -> f64 {
 
 /// Error function (gammp implementation) `Erf(x)`
 pub fn erf2(x: f64) -> f64 {
-    return if x < 0.0 {
+    if x < 0.0 {
         -gammp(x * x, 0.5)
     } else {
         gammp(x * x, 0.5)
@@ -4255,7 +4216,7 @@ pub fn betai_inv(p: f64, a:f64, b: f64) -> f64 {
         }
     }
 
-    afac = -gammaln(a)-gammaln(b)+gammaln(a+b);
+    afac = -gamma_ln(a)-gamma_ln(b)+gamma_ln(a+b);
     for j in 0..10 {
         if x == 0.0 || x == 1.0 {
             return x;
@@ -4277,10 +4238,8 @@ pub fn betai_inv(p: f64, a:f64, b: f64) -> f64 {
         }
     }
 
-    return x;
+    x
 }
-
-
 
 
 /// Inverse of incomplete gamma function
@@ -4291,7 +4250,7 @@ pub fn gammai_inv(p: f64, alpha:f64) -> f64 {
     a1 = alpha-1.0;
 
     let eps = 1.0e-8; // Accuracy is the square of eps.
-    let gln = gammaln(alpha);
+    let gln = gamma_ln(alpha);
 
     if alpha <= 0.0 {
         println!("a must be pos in invgammap");
@@ -4317,8 +4276,9 @@ pub fn gammai_inv(p: f64, alpha:f64) -> f64 {
         if p < 0.5 {
             x = -x;
         }
-        x = f64::max(1.0e-3,alpha*(1.-1./(9.*alpha)-x/(3.*alpha.sqrt()).powi(3)));
-    }
+        // x = f64::max(1.0e-3,alpha*(1.-1./(9.*alpha)-x/(3.*alpha.sqrt()).powi(3)));
+        // The correct Wilson-Hilferty calculation:
+        x = f64::max(1.0e-3, alpha * (1.0 - 1.0 / (9.0 * alpha) - x / (3.0 * alpha.sqrt())).powi(3));    }
     else {
         t = 1.0 - alpha*(0.253+alpha*0.12);
         if p < t {
@@ -4351,11 +4311,8 @@ pub fn gammai_inv(p: f64, alpha:f64) -> f64 {
         }
     }
 
-    return x;
+    x
 }
-
-
-
 
 
 /// Chebyshev coefficients
@@ -4383,27 +4340,29 @@ fn erfc_cheb(z: f64) -> f64 {
         d = ty * d - dd + COEF[j];
         dd = tmp;
     }
-    return t * (-z.powi(2) + 0.5 * (COEF[0] + ty * d) - dd).exp();
+    t * (-z.powi(2) + 0.5 * (COEF[0] + ty * d) - dd).exp()
 }
 
 
 /// Error function (Chebyshev implementation)
 pub fn erf(x: f64) -> f64 {
-    return if x >= 0.0 {
+    if x >= 0.0 {
         1.0 - erfc_cheb(x)
     } else {
         erfc_cheb(-x) - 1.0
     }
 }
 
+
 /// Complementary error function
 pub fn erfc(x: f64) -> f64 {
-    return if x >= 0.0 {
+    if x >= 0.0 {
         erfc_cheb(x)
     } else {
         2.0 - erfc_cheb(-x)
     }
 }
+
 
 /// Inverse of complementary error function
 pub fn erfc_inv(p: f64) -> f64 {
@@ -4432,44 +4391,18 @@ pub fn erfc_inv(p: f64) -> f64 {
         let err = erfc(x) - pp;
         x += err / (std::f64::consts::FRAC_2_SQRT_PI * (-x.powi(2)).exp() - x * err);
     }
-    return if p < 1.0 {
+    if p < 1.0 {
         x
     } else {
         -x
     }
 }
 
+
 /// Inverse of error function
 pub fn erf_inv(p: f64) -> f64 {
-    return erfc_inv(1.0 - p);
+    erfc_inv(1.0 - p)
 }
-
-
-
-
-
-// const NN: usize = 10; // number of terms in the Chebyshev series
-
-
-
-
-
-
-///////////////////////////////
-// Depreciated root finder code
-///////////////////////////////
-// let f = |x| { beta_cdf(x,alpha,beta) - q };
-// let eps = 1.0e-15;
-// let mut convergency = SimpleConvergency { eps, max_iter:30 };
-//
-// let percentile = find_root_secant(0.8, 0.999, &f, &mut convergency);
-//
-// if q < 0.0 || q > 1.0 || alpha <= 0.0 || beta <= 0.0 || percentile.is_err() {
-//     println!("Error in function gamma_percentile");
-//     return f64::NAN;
-// }
-//
-// return percentile.unwrap();
 
 
 
@@ -4477,20 +4410,343 @@ pub fn erf_inv(p: f64) -> f64 {
 mod tests {
     use super::*;
 
+    // A handy macro to assert that two floats are within a specific tolerance
+    macro_rules! assert_approx_eq {
+        ($a:expr, $b:expr, $eps:expr) => {{
+            let (a, b) = (&$a, &$b);
+            let diff = (*a - *b).abs();
+            assert!(
+                diff < $eps,
+                "Assertion failed: values not approximately equal.\n  Expected: {:?}\n  Actual: {:?}\n  Difference: {:?}",
+                *a, *b, diff
+            );
+        }};
+    }
 
-#[test]
+    #[test]
+    fn test_gamma_large_parameter_regression() {
+        let alpha = 500.0;
+        let beta = 0.5;
+        let target_p = 0.2;
+
+        // 1. Find the x value for the 20th percentile
+        let x = gamma_per(target_p, alpha, beta);
+
+        // Ensure the root finder didn't crash to 0.0 or NaN
+        assert!(x > 0.0, "Root finder failed and returned {}", x);
+
+        // 2. Feed x back into the CDF to see if we get 0.2 back
+        let calc_p = gamma_cdf(x, alpha, beta);
+
+        // 3. Check for the round-trip match within a tight tolerance
+        assert_approx_eq!(target_p, calc_p, 1e-6);
+    }
+
+    #[test]
+    fn test_distribution_percentile_roundtrips() {
+        let test_percentiles = vec![0.01, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99];
+        let tolerance = 1e-5;
+
+        for &p in &test_percentiles {
+            // Test Beta(0.5, 2.0)
+            let x_beta = beta_per(p, 0.5, 2.0);
+            let p_beta = beta_cdf(x_beta, 0.5, 2.0);
+            assert_approx_eq!(p, p_beta, tolerance);
+
+            // Test Normal(100.0, 16.0)
+            let x_norm = normal_per(p, 100.0, 16.0);
+            let p_norm = normal_cdf(x_norm, 100.0, 16.0);
+            assert_approx_eq!(p, p_norm, tolerance);
+
+            // Test Exponential(3.5)
+            let x_exp = exp_per(p, 3.5);
+            let p_exp = exp_cdf(x_exp, 3.5);
+            assert_approx_eq!(p, p_exp, tolerance);
+        }
+    }
+
+    #[test]
+    fn test_chisq_large_parameter_regression() {
+        // nu = 500 means alpha = 250, which easily clears our >= 100.0 safeguard
+        let nu = 500.0;
+        let target_p = 0.2;
+
+        // 1. Find the x value for the 20th percentile
+        let x = chisq_per(target_p, nu);
+
+        // Ensure the root finder didn't crash
+        assert!(x > 0.0, "Root finder failed and returned {}", x);
+
+        // 2. Feed x back into the CDF
+        let calc_p = chisq_cdf(x, nu);
+
+        // 3. Check for the round-trip match
+        assert_approx_eq!(target_p, calc_p, 1e-6);
+    }
+
+    #[test]
+    fn test_normal_ran_statistical_properties() {
+        let mu = 100.0;
+        let sigma = 16.0;
+        let n = 100_000; // 100,000 draws to ensure statistical stability
+
+        // 1. Generate a massive array of random draws
+        // (This will run incredibly fast now that you pre-allocate the Vec!)
+        let draws = normal_ranvec(n, mu, sigma);
+
+        // 2. Calculate the sample statistics
+        let calc_mean = sample_mean(&draws);
+        let calc_var = sample_var(&draws);
+
+        // 3. Define the theoretical variance
+        let theoretical_var = sigma.powi(2); // 16^2 = 256.0
+
+        // 4. Assert that the sample stats match the theoretical parameters
+        // Note: Because it's random, we use a slightly wider tolerance than the CDF tests.
+        // With n = 100,000, the sample mean should easily be within 0.5 of mu,
+        // and variance within 3.0 of theoretical_var.
+        assert_approx_eq!(mu, calc_mean, 0.5);
+        assert_approx_eq!(theoretical_var, calc_var, 3.0);
+    }
+
+    macro_rules! assert_approx_eq {
+        ($a:expr, $b:expr, $eps:expr) => {{
+            let (a, b) = (&$a, &$b);
+            let diff = (*a - *b).abs();
+            assert!(
+                diff < $eps,
+                "Assertion failed: values not approximately equal.\n  Expected: {:?}\n  Actual: {:?}\n  Difference: {:?}",
+                *a, *b, diff
+            );
+        }};
+    }
+
+    const TOL: f64 = 1e-6;
+
+    #[test]
+    fn test_beta_correctness() {
+        // Beta(1, 1) is mathematically identical to a Uniform(0, 1) distribution
+        assert_approx_eq!(beta_pdf(0.5, 1.0, 1.0), 1.0, TOL);
+        assert_approx_eq!(beta_cdf(0.5, 1.0, 1.0), 0.5, TOL);
+        assert_approx_eq!(beta_per(0.5, 1.0, 1.0), 0.5, TOL);
+    }
+
+    #[test]
+    fn test_normal_correctness() {
+        // Standard Normal N(0, 1) at x = 0 should be 1 / sqrt(2 * pi)
+        let one_over_sqrt_2pi = 0.3989422804014327;
+        assert_approx_eq!(normal_pdf(0.0, 0.0, 1.0), one_over_sqrt_2pi, TOL);
+
+        // CDF at the mean is exactly 50%
+        assert_approx_eq!(normal_cdf(0.0, 0.0, 1.0), 0.5, TOL);
+        assert_approx_eq!(normal_per(0.5, 0.0, 1.0), 0.0, TOL);
+
+        // Empirical rule: ~68.27% of data falls within 1 standard deviation
+        let cdf_1 = normal_cdf(1.0, 0.0, 1.0);
+        let cdf_neg1 = normal_cdf(-1.0, 0.0, 1.0);
+        assert_approx_eq!(cdf_1 - cdf_neg1, 0.682689492, TOL);
+    }
+
+    #[test]
+    fn test_exponential_correctness() {
+        // Exp(lambda = 2.0) at x = 1.0
+        // pdf(x) = lambda * e^(-lambda * x)
+        // cdf(x) = 1 - e^(-lambda * x)
+        let lambda = 2.0;
+        let x = 1.0;
+        let expected_pdf = 2.0 * std::f64::consts::E.powf(-2.0);
+        let expected_cdf = 1.0 - std::f64::consts::E.powf(-2.0);
+
+        assert_approx_eq!(exp_pdf(x, lambda), expected_pdf, TOL);
+        assert_approx_eq!(exp_cdf(x, lambda), expected_cdf, TOL);
+    }
+
+    #[test]
+    fn test_uniform_correctness() {
+        // Unif(1.5, 4.5)
+        // Width = 3.0, so the constant PDF is 1/3
+        assert_approx_eq!(unif_pdf(2.0, 1.5, 4.5), 0.333333333333, TOL);
+        assert_approx_eq!(unif_cdf(3.0, 1.5, 4.5), 0.5, TOL);
+        assert_approx_eq!(unif_per(0.5, 1.5, 4.5), 3.0, TOL);
+    }
+
+    #[test]
+    fn test_binomial_correctness() {
+        // Bin(n=10, p=0.5)
+        // P(X=5) = (10 choose 5) * 0.5^10 = 252 / 1024 = 0.24609375
+        assert_approx_eq!(bin_pmf(5, 10, 0.5), 0.24609375, TOL);
+
+        // Bin(n=100, p=0.9)
+        // P(X=100) requires all successes, which is exactly 0.9^100
+        assert_approx_eq!(bin_pmf(100, 100, 0.9), 0.9_f64.powi(100), TOL);
+        assert_approx_eq!(bin_cdf(100, 100, 0.9), 1.0, TOL);
+    }
+
+    #[test]
+    fn test_poisson_correctness() {
+        // Pois(lambda = 2.0)
+        // P(X=3) = e^(-2) * 2^3 / 3! = 0.135335 * 8 / 6
+        assert_approx_eq!(pois_pmf(3, 2.0), 0.180447044315, TOL);
+
+        // P(X=0) = e^(-lambda)
+        assert_approx_eq!(pois_pmf(0, 2.0), std::f64::consts::E.powf(-2.0), TOL);
+    }
+
+    #[test]
+    fn test_geometric_correctness() {
+        // Geo(p = 0.05) - Number of failures before first success
+        // P(X=0 failures) = you succeeded on the first try = p
+        assert_approx_eq!(geo_pmf(0, 0.05), 0.05, TOL);
+
+        // P(X=1 failure) = (1-p) * p = 0.95 * 0.05
+        assert_approx_eq!(geo_pmf(1, 0.05), 0.0475, TOL);
+
+        // Geo2(p = 0.05) - Trial number of first success
+        // P(X=1st trial) = p
+        assert_approx_eq!(geo2_pmf(1, 0.05), 0.05, TOL);
+        assert_approx_eq!(geo2_pmf(2, 0.05), 0.0475, TOL);
+    }
+
+    #[test]
+    fn test_chisq_correctness() {
+        // ChiSq(nu = 2.0) is mathematically identical to an Exponential(lambda = 0.5)
+        let x = 2.0;
+        let expected_pdf = 0.5 * std::f64::consts::E.powf(-1.0);
+        assert_approx_eq!(chisq_pdf(x, 2.0), expected_pdf, TOL);
+    }
+
+    #[test]
+    fn test_hypergeometric_correctness() {
+        // HG(n=20, N=100, M=50)
+        // Drawing 20 items from a population of 100 where 50 are successes.
+        // P(X=20) = exactly matching all 20 draws to the 50 successes.
+        // (50 choose 20) / (100 choose 20)
+        let expected_prob = 0.000000017402868; // Calculated via standard statistical tables
+        assert_approx_eq!(hg_pmf(20, 20, 100, 50), expected_prob, TOL);
+    }
+
+    #[test]
+    fn test_gamma_correctness() {
+        // Gamma(n) = (n-1)! for integer n
+        assert_approx_eq!(gamma(5.0), 24.0, TOL);
+        assert_approx_eq!(gamma(6.0), 120.0, TOL);
+
+        // Gamma(0.5) = sqrt(pi)
+        let sqrt_pi = std::f64::consts::PI.sqrt();
+        assert_approx_eq!(gamma(0.5), sqrt_pi, TOL);
+
+        // ln(Gamma(x)) should match the log of Gamma(x)
+        assert_approx_eq!(gamma_ln(5.0), 24.0_f64.ln(), TOL);
+    }
+
+    #[test]
+    fn test_factorial_correctness() {
+        // fact_i computes standard factorials
+        assert_eq!(fact_i(1), 1);
+        assert_eq!(fact_i(5), 120);
+        assert_eq!(fact_i(10), 3_628_800);
+
+        // fact_f generalizes factorial: x! = x * Gamma(x)
+        // 5! = 120
+        assert_approx_eq!(fact_f(5.0), 120.0, TOL);
+        // 0.5! = 0.5 * Gamma(0.5) = 0.5 * sqrt(pi)
+        let half_fact = 0.5 * std::f64::consts::PI.sqrt();
+        assert_approx_eq!(fact_f(0.5), half_fact, TOL);
+    }
+
+    #[test]
+    fn test_combinations_correctness() {
+        // 10 choose 5 = 252
+        assert_approx_eq!(comb(10, 5), 252.0, TOL);
+        // 50 choose 2 = (50 * 49) / 2 = 1225
+        assert_approx_eq!(comb(50, 2), 1225.0, TOL);
+        // n choose 0 = 1, n choose n = 1
+        assert_approx_eq!(comb(20, 0), 1.0, TOL);
+        assert_approx_eq!(comb(20, 20), 1.0, TOL);
+    }
+
+    #[test]
+    fn test_beta_function_correctness() {
+        // B(1, 1) = 1
+        assert_approx_eq!(beta_fn(1.0, 1.0), 1.0, TOL);
+
+        // B(2, 2) = Gamma(2)*Gamma(2) / Gamma(4) = (1 * 1) / 6 = 1/6
+        assert_approx_eq!(beta_fn(2.0, 2.0), 1.0 / 6.0, TOL);
+
+        // B(a, b) should equal B(b, a) (Symmetry)
+        assert_approx_eq!(beta_fn(3.5, 7.2), beta_fn(7.2, 3.5), TOL);
+    }
+
+    #[test]
+    fn test_incomplete_beta_correctness() {
+        // I_x(1, 1) = x
+        assert_approx_eq!(betai(0.25, 1.0, 1.0), 0.25, TOL);
+        assert_approx_eq!(betai(0.75, 1.0, 1.0), 0.75, TOL);
+
+        // I_x(a, b) at x=0 is 0, at x=1 is 1
+        assert_approx_eq!(betai(0.0, 2.0, 5.0), 0.0, TOL);
+        assert_approx_eq!(betai(1.0, 2.0, 5.0), 1.0, TOL);
+
+        // I_{0.5}(a, a) = 0.5 due to symmetry
+        assert_approx_eq!(betai(0.5, 3.0, 3.0), 0.5, TOL);
+    }
+
+    #[test]
+    fn test_incomplete_gamma_correctness() {
+        // gammp(x, a) is the regularized lower incomplete gamma function.
+        // P(x, 1) = 1 - e^(-x)
+        let x = 1.0;
+        let expected = 1.0 - std::f64::consts::E.powf(-x);
+        assert_approx_eq!(gammp(x, 1.0), expected, TOL);
+
+        // Q(x, a) is the complement: Q(x, a) = 1 - P(x, a)
+        // Therefore, gammq(x, a) + gammp(x, a) = 1.0
+        assert_approx_eq!(gammp(2.5, 3.0) + gammq(2.5, 3.0), 1.0, TOL);
+    }
+
+    #[test]
+    fn test_error_function_correctness() {
+        // erf(0) = 0
+        assert_approx_eq!(erf(0.0), 0.0, TOL);
+
+        // erf(x) for a known value: erf(1) ≈ 0.84270079
+        assert_approx_eq!(erf(1.0), 0.8427007929497148, TOL);
+
+        // erf(-x) = -erf(x) (Odd function)
+        assert_approx_eq!(erf(-1.0), -erf(1.0), TOL);
+
+        // erf(x) + erfc(x) = 1.0
+        assert_approx_eq!(erf(0.5) + erfc(0.5), 1.0, TOL);
+    }
+
+    #[test]
+    fn test_error_function_inverses() {
+        // Test round-tripping: erf_inv(erf(x)) == x
+        let x = 0.5;
+        let p = erf(x);
+        assert_approx_eq!(erf_inv(p), x, TOL);
+
+        // erf_inv(0) = 0
+        assert_approx_eq!(erf_inv(0.0), 0.0, TOL);
+
+        // Test round-tripping for erfc
+        let p_comp = erfc(x);
+        assert_approx_eq!(erfc_inv(p_comp), x, TOL);
+    }
+
+    #[test]
     pub fn it_works() {
         // let result = add(2, 2);
         // assert_eq!(result, 4);
-        println!("It works!!");
+        println!("Testing each distribution function...");
 
         println!("\nBeta");
-        println!("pdf: {}", beta_pdf(0.7,0.5,1.5));
-        println!("cdf: {}", beta_cdf(0.7,0.5,1.5));
-        println!("per: {}", beta_per(0.1,0.5,1.5));
-        println!("ran: {}", beta_ran(0.5,1.5));
-        println!("ran_vec: {:?}", beta_ranvec(3,0.5, 1.5));
-        let mut mybeta = BetaDist{alpha:0.5, beta:1.5};
+        println!("pdf: {}", beta_pdf(0.7, 0.5, 1.5));
+        println!("cdf: {}", beta_cdf(0.7, 0.5, 1.5));
+        println!("per: {}", beta_per(0.1, 0.5, 1.5));
+        println!("ran: {}", beta_ran(0.5, 1.5));
+        println!("ran_vec: {:?}", beta_ranvec(3, 0.5, 1.5));
+        let mut mybeta = BetaDist { alpha: 0.5, beta: 1.5 };
         println!("pdf: {}", mybeta.pdf(0.7));
         println!("cdf: {}", mybeta.cdf(0.7));
         println!("per: {}", mybeta.per(0.1));
@@ -4502,12 +4758,12 @@ mod tests {
         println!("---------------------");
 
         println!("\nChi-Square");
-        println!("pdf: {}", chisq_pdf(0.7,1.5));
-        println!("cdf: {}", chisq_cdf(0.7,1.5));
-        println!("per: {}", chisq_per(0.1,1.5));
+        println!("pdf: {}", chisq_pdf(0.7, 1.5));
+        println!("cdf: {}", chisq_cdf(0.1, 5000.0));
+        println!("per: {}", chisq_per(0.1, 5000.0));
         println!("ran: {}", chisq_ran(1.5));
-        println!("ran_vec: {:?}", chisq_ranvec(3,1.5));
-        let mut mychisq = ChiSqDist{nu:1.5};
+        println!("ran_vec: {:?}", chisq_ranvec(3, 1.5));
+        let mut mychisq = ChiSqDist { nu: 1.5 };
         println!("pdf: {}", mychisq.pdf(0.7));
         println!("cdf: {}", mychisq.cdf(0.7));
         println!("per: {}", mychisq.per(0.1));
@@ -4519,12 +4775,12 @@ mod tests {
         println!("---------------------");
 
         println!("\nExp");
-        println!("pdf: {}", exp_pdf(0.7,1.5));
-        println!("cdf: {}", exp_cdf(0.7,1.5));
-        println!("per: {}", exp_per(0.1,1.5));
+        println!("pdf: {}", exp_pdf(0.7, 1.5));
+        println!("cdf: {}", exp_cdf(0.7, 1.5));
+        println!("per: {}", exp_per(0.1, 1.5));
         println!("ran: {}", exp_ran(1.5));
-        println!("ran_vec: {:?}", exp_ranvec(3,1.5));
-        let mut myexp = ExpDist{lambda:1.5};
+        println!("ran_vec: {:?}", exp_ranvec(3, 1.5));
+        let mut myexp = ExpDist { lambda: 1.5 };
         println!("pdf: {}", myexp.pdf(0.7));
         println!("cdf: {}", myexp.cdf(0.7));
         println!("per: {}", myexp.per(0.1));
@@ -4536,12 +4792,12 @@ mod tests {
         println!("---------------------");
 
         println!("\nF Dist");
-        println!("pdf: {}", f_pdf(0.7,1.5, 4.5));
-        println!("cdf: {}", f_cdf(0.7,1.5, 4.5));
-        println!("per: {}", f_per(0.1,1.5, 4.5));
+        println!("pdf: {}", f_pdf(0.7, 1.5, 4.5));
+        println!("cdf: {}", f_cdf(0.7, 1.5, 4.5));
+        println!("per: {}", f_per(0.1, 1.5, 4.5));
         println!("ran: {}", f_ran(1.5, 4.5));
-        println!("ran_vec: {:?}", f_ranvec(3,1.5, 4.5));
-        let mut mydist = FDist{nu1:1.5, nu2:4.5};
+        println!("ran_vec: {:?}", f_ranvec(3, 1.5, 4.5));
+        let mut mydist = FDist { nu1: 1.5, nu2: 4.5 };
         println!("pdf: {}", mydist.pdf(0.7));
         println!("cdf: {}", mydist.cdf(0.7));
         println!("per: {}", mydist.per(0.1));
@@ -4553,12 +4809,12 @@ mod tests {
         println!("---------------------");
 
         println!("\nGamma Dist");
-        println!("pdf: {}", gamma_pdf(0.7,1.5, 4.5));
-        println!("cdf: {}", gamma_cdf(0.7,1.5, 4.5));
-        println!("per: {}", gamma_per(0.1,1.5, 4.5));
+        println!("pdf: {}", gamma_pdf(0.7, 1.5, 4.5));
+        println!("cdf: {}", gamma_cdf(0.7, 1.5, 4.5));
+        println!("per: {}", gamma_per(0.2, 500.0, 0.5));
         println!("ran: {}", gamma_ran(1.5, 4.5));
-        println!("ran_vec: {:?}", gamma_ranvec(3,1.5, 4.5));
-        let mut mydist = GammaDist{alpha:1.5, beta:4.5};
+        println!("ran_vec: {:?}", gamma_ranvec(3, 1.5, 4.5));
+        let mut mydist = GammaDist { alpha: 1.5, beta: 4.5 };
         println!("pdf: {}", mydist.pdf(0.7));
         println!("cdf: {}", mydist.cdf(0.7));
         println!("per: {}", mydist.per(0.99));
@@ -4570,12 +4826,12 @@ mod tests {
         println!("---------------------");
 
         println!("\nLog-Normal");
-        println!("pdf: {}", lognormal_pdf(0.7,1.5, 4.5));
-        println!("cdf: {}", lognormal_cdf(0.7,1.5, 4.5));
-        println!("per: {}", lognormal_per(0.1,1.5, 4.5));
+        println!("pdf: {}", lognormal_pdf(0.7, 1.5, 4.5));
+        println!("cdf: {}", lognormal_cdf(0.7, 1.5, 4.5));
+        println!("per: {}", lognormal_per(0.1, 1.5, 4.5));
         println!("ran: {}", lognormal_ran(1.5, 4.5));
-        println!("ran_vec: {:?}", lognormal_ranvec(3,1.5, 5.5));
-        let mut mydist = LogNormalDist{mu:1.5, sigma:4.5};
+        println!("ran_vec: {:?}", lognormal_ranvec(3, 1.5, 5.5));
+        let mut mydist = LogNormalDist { mu: 1.5, sigma: 4.5 };
         println!("pdf: {}", mydist.pdf(0.7));
         println!("cdf: {}", mydist.cdf(0.7));
         println!("per: {}", mydist.per(0.99));
@@ -4587,12 +4843,12 @@ mod tests {
         println!("---------------------");
 
         println!("\nNormal");
-        println!("pdf: {}", normal_pdf(0.7,1.5, 4.5));
-        println!("cdf: {}", normal_cdf(0.7,1.5, 4.5));
-        println!("per: {}", normal_per(0.1,1.5, 4.5));
+        println!("pdf: {}", normal_pdf(0.7, 1.5, 4.5));
+        println!("cdf: {}", normal_cdf(0.7, 1.5, 4.5));
+        println!("per: {}", normal_per(0.1, 1.5, 4.5));
         println!("ran: {}", normal_ran(1.5, 4.5));
-        println!("ran_vec: {:?}", normal_ranvec(3,1.5, 4.5));
-        let mut mydist = NormalDist{mu:1.5, sigma:4.5};
+        println!("ran_vec: {:?}", normal_ranvec(3, 1.5, 4.5));
+        let mut mydist = NormalDist { mu: 1.5, sigma: 4.5 };
         println!("pdf: {}", mydist.pdf(0.7));
         println!("cdf: {}", mydist.cdf(0.7));
         println!("per: {}", mydist.per(0.99));
@@ -4604,12 +4860,12 @@ mod tests {
         println!("---------------------");
 
         println!("\nt Dist");
-        println!("pdf: {}", t_pdf(0.7,4.5));
-        println!("cdf: {}", t_cdf(0.7,4.5));
-        println!("per: {}", t_per(0.1,4.5));
+        println!("pdf: {}", t_pdf(0.7, 4.5));
+        println!("cdf: {}", t_cdf(0.7, 4.5));
+        println!("per: {}", t_per(0.1, 4.5));
         println!("ran: {}", t_ran(4.5));
-        println!("ran_vec: {:?}", t_ranvec(3,4.5));
-        let mut mydist = TDist{nu:4.5};
+        println!("ran_vec: {:?}", t_ranvec(3, 4.5));
+        let mut mydist = TDist { nu: 4.5 };
         println!("pdf: {}", mydist.pdf(0.7));
         println!("cdf: {}", mydist.cdf(0.7));
         println!("per: {}", mydist.per(0.99));
@@ -4620,13 +4876,13 @@ mod tests {
         println!("sd: {}", mydist.sd());
         println!("---------------------");
 
-        println!("\nUhif");
-        println!("pdf: {}", unif_pdf(1.7,1.5, 4.5));
-        println!("cdf: {}", unif_cdf(1.7,1.5, 4.5));
-        println!("per: {}", unif_per(0.1,1.5, 4.5));
+        println!("\nUnif");
+        println!("pdf: {}", unif_pdf(1.7, 1.5, 4.5));
+        println!("cdf: {}", unif_cdf(1.7, 1.5, 4.5));
+        println!("per: {}", unif_per(0.1, 1.5, 4.5));
         println!("ran: {}", unif_ran(1.5, 4.5));
-        println!("ran_vec: {:?}", unif_ranvec(3,1.5, 4.5));
-        let mut mydist = UnifDist{a:1.5, b:4.5};
+        println!("ran_vec: {:?}", unif_ranvec(3, 1.5, 4.5));
+        let mut mydist = UnifDist { a: 1.5, b: 4.5 };
         println!("pdf: {}", mydist.pdf(0.7));
         println!("cdf: {}", mydist.cdf(0.7));
         println!("per: {}", mydist.per(0.99));
@@ -4638,12 +4894,12 @@ mod tests {
         println!("---------------------");
 
         println!("\nBinomial");
-        println!("bin_pmf: {}", bin_pmf(99,100,0.9));
-        println!("bin_cdf: {}", bin_cdf(99,100,0.9));
-        println!("bin_per: {}", bin_per(1.0,100,0.9));
-        println!("bin_ran: {}", bin_ran(100,0.9));
-        println!("ran_vec: {:?}", bin_ranvec(3,100, 0.9));
-        let mut mybin = BinDist{n:100, p:0.9};
+        println!("bin_pmf: {}", bin_pmf(99, 100, 0.9));
+        println!("bin_cdf: {}", bin_cdf(99, 100, 0.9));
+        println!("bin_per: {}", bin_per(1.0, 100, 0.9));
+        println!("bin_ran: {}", bin_ran(100, 0.9));
+        println!("ran_vec: {:?}", bin_ranvec(3, 100, 0.9));
+        let mut mybin = BinDist { n: 100, p: 0.9 };
         println!("bin pmf: {}", mybin.pmf(80));
         println!("bin cdf: {}", mybin.cdf(80));
         println!("bin per: {}", mybin.per(0.99));
@@ -4654,12 +4910,12 @@ mod tests {
         println!("bin sd: {}", mybin.sd());
 
         println!("\nGeo");
-        println!("geo_pmf: {}", geo_pmf(0,0.05));
-        println!("geo_cdf: {}", geo_cdf(0,0.05));
-        println!("geo_per: {}", geo_per(1.0,0.05));
+        println!("geo_pmf: {}", geo_pmf(0, 0.05));
+        println!("geo_cdf: {}", geo_cdf(0, 0.05));
+        println!("geo_per: {}", geo_per(1.0, 0.05));
         println!("geo_ran: {}", geo_ran(0.05));
-        println!("ran_vec: {:?}", geo_ranvec(3,0.05));
-        let mut mygeo = GeoDist{p:0.05};
+        println!("ran_vec: {:?}", geo_ranvec(3, 0.05));
+        let mut mygeo = GeoDist { p: 0.05 };
         println!("geo pmf: {}", mygeo.pmf(2));
         println!("geo cdf: {}", mygeo.cdf(2));
         println!("geo per: {}", mygeo.per(0.99));
@@ -4671,12 +4927,12 @@ mod tests {
 
 
         println!("\nGeo2");
-        println!("geo2_pmf: {}", geo2_pmf(1,0.05));
-        println!("geo2_cdf: {}", geo2_cdf(1,0.05));
-        println!("geo2_per: {}", geo2_per(0.99,0.05));
+        println!("geo2_pmf: {}", geo2_pmf(1, 0.05));
+        println!("geo2_cdf: {}", geo2_cdf(1, 0.05));
+        println!("geo2_per: {}", geo2_per(0.99, 0.05));
         println!("geo2_ran: {}", geo2_ran(0.05));
-        println!("ran_vec: {:?}", geo2_ranvec(3,0.05));
-        let mut mygeo2 = Geo2Dist{p:0.05};
+        println!("ran_vec: {:?}", geo2_ranvec(3, 0.05));
+        let mut mygeo2 = Geo2Dist { p: 0.05 };
         println!("geo2 pmf: {}", mygeo2.pmf(2));
         println!("geo2 cdf: {}", mygeo2.cdf(2));
         println!("geo2 per: {}", mygeo2.per(0.99));
@@ -4688,12 +4944,12 @@ mod tests {
 
 
         println!("\nHG");
-        println!("hg_pmf: {}", hg_pmf(80,100,1000, 900));
-        println!("hg_cdf: {}", hg_cdf(80,100,1000, 900));
-        println!("hg_per: {}", hg_per(0.26,100,1000, 900));
-        println!("hg_ran: {}", hg_ran(100,1000, 900));
-        println!("ran_vec: {:?}", hg_ranvec(3,100, 1000, 900));
-        let mut myhg = HGDist{n:100, N:1000, M:900};
+        println!("hg_pmf: {}", hg_pmf(80, 100, 1000, 900));
+        println!("hg_cdf: {}", hg_cdf(80, 100, 1000, 900));
+        println!("hg_per: {}", hg_per(0.26, 100, 1000, 900));
+        println!("hg_ran: {}", hg_ran(100, 1000, 900));
+        println!("ran_vec: {:?}", hg_ranvec(3, 100, 1000, 900));
+        let mut myhg = HGDist { n: 100, N: 1000, M: 900 };
         println!("hg pmf: {}", myhg.pmf(80));
         println!("hg cdf: {}", myhg.cdf(80));
         println!("hg per: {}", myhg.per(0.26));
@@ -4705,12 +4961,12 @@ mod tests {
 
 
         println!("\nNB");
-        println!("NB_pmf: {}", nb_pmf(10,5, 0.1));
-        println!("NB_cdf: {}", nb_cdf(10,5, 0.1));
-        println!("NB_per: {}", nb_per(0.0,5, 0.1));
+        println!("NB_pmf: {}", nb_pmf(10, 5, 0.1));
+        println!("NB_cdf: {}", nb_cdf(10, 5, 0.1));
+        println!("NB_per: {}", nb_per(0.0, 5, 0.1));
         println!("NB_ran: {}", nb_ran(5, 0.1));
-        println!("ran_vec: {:?}", nb_ranvec(3,5, 0.1));
-        let mut mynb = NBDist{r: 5, p:0.1};
+        println!("ran_vec: {:?}", nb_ranvec(3, 5, 0.1));
+        let mut mynb = NBDist { r: 5, p: 0.1 };
         println!("NB pmf: {}", mynb.pmf(2));
         println!("NB cdf: {}", mynb.cdf(2));
         println!("NB per: {}", mynb.per(0.99));
@@ -4722,12 +4978,12 @@ mod tests {
 
 
         println!("\nNB2");
-        println!("NB2_pmf: {}", nb2_pmf(10,5, 0.1));
-        println!("NB2_cdf: {}", nb2_cdf(10,5, 0.1));
-        println!("NB2_per: {}", nb2_per(1.0,5, 0.1));
+        println!("NB2_pmf: {}", nb2_pmf(10, 5, 0.1));
+        println!("NB2_cdf: {}", nb2_cdf(10, 5, 0.1));
+        println!("NB2_per: {}", nb2_per(1.0, 5, 0.1));
         println!("NB2_ran: {}", nb2_ran(5, 0.1));
-        println!("ran_vec: {:?}", nb2_ranvec(3,5, 0.1));
-        let mut mynb2 = NB2Dist{r: 5, p:0.1};
+        println!("ran_vec: {:?}", nb2_ranvec(3, 5, 0.1));
+        let mut mynb2 = NB2Dist { r: 5, p: 0.1 };
         println!("NB2 pmf: {}", mynb2.pmf(2));
         println!("NB2 cdf: {}", mynb2.cdf(2));
         println!("NB2 per: {}", mynb2.per(0.99));
@@ -4739,12 +4995,12 @@ mod tests {
 
 
         println!("\nPois");
-        println!("pois_pmf: {}", pois_pmf(3,2.0));
-        println!("pois_cdf: {}", pois_cdf(3,2.0));
-        println!("pois_per: {}", pois_per(1.0,2.0));
+        println!("pois_pmf: {}", pois_pmf(3, 2.0));
+        println!("pois_cdf: {}", pois_cdf(3, 2.0));
+        println!("pois_per: {}", pois_per(1.0, 2.0));
         println!("pois_ran: {}", pois_ran(2.0));
-        println!("ran_vec: {:?}", pois_ranvec(3,2.0));
-        let mut mypois = PoisDist{lambda: 2.0};
+        println!("ran_vec: {:?}", pois_ranvec(3, 2.0));
+        let mut mypois = PoisDist { lambda: 2.0 };
         println!("pois pmf: {}", mypois.pmf(3));
         println!("pois cdf: {}", mypois.cdf(3));
         println!("pois per: {}", mypois.per(0.26));
@@ -4754,28 +5010,12 @@ mod tests {
         println!("pois var: {}", mypois.var());
         println!("pois sd: {}", mypois.sd());
 
-
-        // use t_ran;
-        // let mut vec = Vec::new();
-        //
-        // let iter: usize = 1000000;
-        // for _ in 0..iter {
-        //     vec.push(t_ran(3.0));
-        // }
-        //
-        // let mut mean: f64 = vec.iter().sum();
-        // mean = mean / (iter as f64);
-        //
-        // let mut var: f64 = vec.iter().map(|x| (x-mean).powi(2) ).sum();
-        // var = var / ((iter - 1) as f64);
-        //
-        // println!("Mean: {}", mean);
-        // println!("Var: {}", var);
-
-
         use crate::erf;
         println!("\nerf: {}", erf(1.0));
         use crate::erf2;
         println!("erf2: {}", erf2(1.0));
     }
 }
+
+
+
