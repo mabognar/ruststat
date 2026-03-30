@@ -4632,7 +4632,7 @@ mod tests {
         assert_approx_eq!(gamma(6.0), 120.0, TOL);
 
         // Gamma(0.5) = sqrt(pi)
-        let sqrt_pi = std::f64::consts::PI.sqrt();
+        let sqrt_pi = PI.sqrt();
         assert_approx_eq!(gamma(0.5), sqrt_pi, TOL);
 
         // ln(Gamma(x)) should match the log of Gamma(x)
@@ -4650,7 +4650,7 @@ mod tests {
         // 5! = 120
         assert_approx_eq!(fact_f(5.0), 120.0, TOL);
         // 0.5! = 0.5 * Gamma(0.5) = 0.5 * sqrt(pi)
-        let half_fact = 0.5 * std::f64::consts::PI.sqrt();
+        let half_fact = 0.5 * PI.sqrt();
         assert_approx_eq!(fact_f(0.5), half_fact, TOL);
     }
 
