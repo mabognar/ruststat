@@ -1,6 +1,6 @@
 # ruststat - Tools for working with many common probability distributions
 
-## Version 0.2.0, What's New
+## Version 0.2.0
 
 - Improvements to robustness and speed
 - Bug fixes and enhancements
