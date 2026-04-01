@@ -1,9 +1,8 @@
 # ruststat - Tools for working with many common probability distributions
 
-## Version 0.2.0
+## Version 0.3.0
 
 - Improvements to robustness and speed
-- Bug fixes and enhancements
 
 ## Features
 
@@ -37,7 +36,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-ruststat = "0.2.0"  # Replace with the latest version
+ruststat = "0.3.0"  # Replace with the latest version
 ```
 
 ## Quick Start
