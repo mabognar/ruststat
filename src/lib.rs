@@ -76,7 +76,6 @@ pub fn sample_mean(x: &[f64]) -> f64 {
 pub fn sample_var(x: &[f64]) -> f64 {
     let n = x.len();
 
-    // Variance requires at least 2 data points (n-1 degrees of freedom)
     if n < 2 {
         return f64::NAN;
     }
@@ -96,7 +95,6 @@ pub fn sample_var(x: &[f64]) -> f64 {
 /// println!("Sample SD: {}", sample_sd(&x));
 /// ```
 pub fn sample_sd(x: &[f64]) -> f64 {
-    // If x has < 2 elements, sample_var returns NAN, and NAN.sqrt() is safely NAN.
     sample_var(x).sqrt()
 }
 
@@ -585,7 +583,6 @@ pub fn exp_per(p: f64, lambda: f64) -> f64 {
 pub fn exp_ran(lambda: f64) -> f64 {
     let u: f64;
     u = random();
-    // u = rand::thread_rng().gen();
     -(1.0-u).ln()/lambda
 }
 
@@ -887,7 +884,6 @@ pub fn gamma_cdf(x: f64, alpha: f64, beta: f64) -> f64 {
         return 0.0;
     }
 
-    // Route directly through the protected gammp function
     gammp(x * beta, alpha)
 }
 
@@ -2222,7 +2218,6 @@ pub fn unif_per(p: f64, a: f64, b: f64) -> f64 {
 pub fn unif_ran(a: f64, b: f64) -> f64 {
     let u: f64;
     u = random();
-    // u = rand::thread_rng().gen();
     a + u * (b-a)
 }
 
@@ -2246,7 +2241,7 @@ pub fn unif_ranvec(n: u64, a: f64, b: f64) -> Vec<f64> {
     let mut xvec: Vec<f64> = Vec::with_capacity(n as usize);
 
     for _ in 0..n {
-        xvec.push(unif_ran(a, b)); // Now it just pushes without ever resizing
+        xvec.push(unif_ran(a, b));
     }
     xvec
 }
@@ -2342,14 +2337,12 @@ pub fn bin_pmf(x: u64, n: u64, p: f64) -> f64 {
         return 0.0;
     }
 
-    // --- The Edge Case Patch ---
     if p == 0.0 {
         return if x == 0 { 1.0 } else { 0.0 };
     }
     if p == 1.0 {
         return if x == n { 1.0 } else { 0.0 };
     }
-    // ---------------------------
 
     (factln_i(n) - factln_i(x) - factln_i(n-x) + x as f64 * p.ln() + (n-x) as f64 * (1.0-p).ln()).exp()
 }
@@ -2372,21 +2365,13 @@ pub fn bin_cdf(x: u64, n: u64, p: f64) -> f64 {
         println!("NAN produced. Error in function bin_cdf");
         return f64::NAN;
     }
-    if x > n {
-        return 1.0;
-    }
+    if x >= n { return 1.0; }
+    if p == 0.0 { return 1.0; }
+    if p == 1.0 { return 0.0; } // Caught by x >= n if it was a guaranteed success
 
-    let mut sum = 0.0;
-    for i in 0..=x {
-        sum += bin_pmf(i, n, p);
-    }
-    if sum < 1.0 {
-        sum
-    } else {
-        1.0
-    }
+    // P(X <= x) = I_{1-p}(n-x, x+1)
+    betai(1.0 - p, (n - x) as f64, (x + 1) as f64)
 }
-
 
 /// Computes a percentile for `X ~ Bin(n,p)`
 /// # Note
@@ -2403,25 +2388,23 @@ pub fn bin_cdf(x: u64, n: u64, p: f64) -> f64 {
 /// println!("Percentile: {}", bin_per(0.8, 10, 0.6));
 /// ```
 pub fn bin_per(q: f64, n: u64, p: f64) -> u64 {
-    let mut x = 0;
-
     if n <= 0 || p < 0.0 || p > 1.0 || q < 0.0 || q > 1.0 {
         println!("NAN produced. Error in function bin_per");
         return f64::NAN as u64;
     }
-    if q == 0.0 {
-        return 0;
-    }
-    if q == 1.0 {
-        return n;
-    }
+    if q == 0.0 { return 0; }
+    if q == 1.0 { return n; }
 
-    while bin_cdf(x, n, p) < q {
+    let mut x = 0;
+    let mut sum = bin_pmf(0, n, p);
+
+    // Accumulate the PMF to avoid recalculating the CDF from zero
+    while sum < q && x < n {
         x += 1;
+        sum += bin_pmf(x, n, p);
     }
     x
 }
-
 
 /// Random draw from `X ~ Bin(n,p)` distribution
 /// Sheldon Ross, Simulation, (2003)
@@ -2561,14 +2544,12 @@ pub fn geo_pmf(x: u64, p: f64) -> f64 {
         return f64::NAN;
     }
 
-    // --- The Edge Case Fast Paths ---
     if p == 0.0 {
         return 0.0;
     }
     if p == 1.0 {
         return if x == 0 { 1.0 } else { 0.0 };
     }
-    // --------------------------------
 
     (1.0-p).powi(x as i32) * p
 }
@@ -2589,18 +2570,12 @@ pub fn geo_pmf(x: u64, p: f64) -> f64 {
 /// ```
 pub fn geo_cdf(x: u64, p: f64) -> f64 {
     if p <= 0.0 || p > 1.0 {
-        println!("NAN produced. Error in function geo_pmf");
+        println!("NAN produced. Error in function geo_cdf");
         return f64::NAN;
     }
 
-    let mut sum = 0.0;
-    for i in 0..=x {
-        sum += geo_pmf(i, p);
-    }
-
-    sum
+    1.0 - (1.0 - p).powi((x + 1) as i32)
 }
-
 
 /// Computes a percentile for `X ~ Geo(p)`
 /// where `X =` the number of failures prior to the first success.
@@ -2761,14 +2736,12 @@ pub fn geo2_pmf(x: u64, p: f64) -> f64 {
         return 0.0;
     }
 
-    // --- The Edge Case Fast Paths ---
     if p == 0.0 {
         return 0.0;
     }
     if p == 1.0 {
         return if x == 1 { 1.0 } else { 0.0 };
     }
-    // --------------------------------
 
     (1.0-p).powi((x-1) as i32) * p
 }
@@ -2791,18 +2764,10 @@ pub fn geo2_cdf(x: u64, p: f64) -> f64 {
         println!("NAN produced. Error in function geo2_cdf");
         return f64::NAN;
     }
-    if x < 1 {
-        return 0.0;
-    }
+    if x < 1 { return 0.0; }
 
-    let mut sum = 0.0;
-    for i in 1..=x {
-        sum += geo2_pmf(i, p);
-    }
-
-    sum
+    1.0 - (1.0 - p).powi(x as i32)
 }
-
 
 /// Computes a percentile for `X ~ Geo(p)`
 /// where `X =` the trial on which the first success is observed.
@@ -2979,16 +2944,12 @@ pub fn hg_pmf(x: u64, n: u64, N: u64, M: u64) -> f64 {
         return 0.0;
     }
 
-    // --- The Deterministic Fast Paths ---
     if M == 0 {
-        // No successes exist in the population
         return if x == 0 { 1.0 } else { 0.0 };
     }
     if M == N {
-        // Entire population is a success
         return if x == n { 1.0 } else { 0.0 };
     }
-    // ------------------------------------
 
     (fact_ln_u(M) - fact_ln_u(x) - fact_ln_u(M-x) +
         fact_ln_u(N-M) - fact_ln_u(n-x) - fact_ln_u(N-M-n+x) -
@@ -3056,22 +3017,27 @@ pub fn hg_cdf(x: u64, n: u64, N: u64, M: u64) -> f64 {
 /// ```
 #[allow(non_snake_case)]
 pub fn hg_per(q: f64, n: u64, N: u64, M: u64) -> u64 {
-    let mut x = 0;
-
-    if  n < 1 || N < 1 || M < 1 ||
-        M > N || n > N ||
-        q < 0.0 || q > 1.0 {
+    if n < 1 || N < 1 || M > N || n > N || q < 0.0 || q > 1.0 {
         println!("NAN produced. Error in function hg_per");
         return f64::NAN as u64;
     }
 
-    while hg_cdf(x, n, N, M) < q {
+    let min_x = if n > N - M { n - (N - M) } else { 0 };
+    let max_x = n.min(M);
+
+    if q == 0.0 { return min_x; }
+    if q == 1.0 { return max_x; }
+
+    let mut x = min_x;
+    let mut sum = hg_pmf(x, n, N, M);
+
+    while sum < q && x < max_x {
         x += 1;
+        sum += hg_pmf(x, n, N, M);
     }
 
     x
 }
-
 
 /// Random draw from `X ~ HG(n, N, M)` distribution
 /// where `X =` the number of successes.
@@ -3093,14 +3059,10 @@ pub fn hg_ran(n: u64, N: u64, M: u64) -> u64 {
         return f64::NAN as u64;
     }
 
-    // 1. Generate a uniform random probability
     let u = unif_ran(0.0, 1.0);
 
-    // 2. Start at the lowest possible number of successes
-    // (If we draw more items than there are failures, we MUST get some successes)
     let mut x = if n > N - M { n - (N - M) } else { 0 };
 
-    // 3. Walk up the CDF until we cross our random threshold
     while hg_cdf(x, n, N, M) < u {
         x += 1;
     }
@@ -3211,11 +3173,9 @@ pub fn nb_pmf(x: u64, r: u64, p: f64) -> f64 {
         return f64::NAN;
     }
 
-    // --- The Edge Case Patch ---
     if p == 1.0 {
         return if x == 0 { 1.0 } else { 0.0 };
     }
-    // ---------------------------
 
     (fact_ln_u(x+r-1) - fact_ln_u(r-1) - fact_ln_u(x) + (r as f64)*p.ln() +
         (x as f64)*(1.0-p).ln()).exp()
@@ -3240,13 +3200,11 @@ pub fn nb_cdf(x: u64, r: u64, p: f64) -> f64 {
         println!("NAN produced. Error in function nb_cdf");
         return f64::NAN;
     }
-    let mut sum = 0.0;
-    for i in 0..=x {
-        sum += nb_pmf(i, r, p);
-    }
-    sum
-}
+    if p == 1.0 { return 1.0; }
 
+    // P(X <= x) = I_p(r, x+1)
+    betai(p, r as f64, (x + 1) as f64)
+}
 
 /// Computes a percentile for `X ~ NB(r,p)`
 /// where `X =` the number of failures prior to the `r`th success.
@@ -3265,25 +3223,24 @@ pub fn nb_cdf(x: u64, r: u64, p: f64) -> f64 {
 /// println!("Percentile: {}", nb_per(0.8, 2, 0.6));
 /// ```
 pub fn nb_per(q: f64, r: u64, p: f64) -> u64 {
-    let mut x = 0;
-
     if p <= 0.0 || p > 1.0 || q < 0.0 || q > 1.0 {
         println!("NAN produced. Error in function nb_per");
         return f64::NAN as u64;
     }
-    if q == 0.0 {
-        return 0;
-    }
-    if q == 1.0 {
-        return u64::MAX;
+
+    if q == 0.0 { return 0; }
+    if q == 1.0 { return u64::MAX; }
+
+    let mut x = 0;
+    let mut sum = nb_pmf(x, r, p);
+
+    while sum < q {
+        x += 1;
+        sum += nb_pmf(x, r, p);
     }
 
-    while nb_cdf(x, r, p) < q {
-        x += 1;
-    }
     x
 }
-
 
 /// Random draw from `X ~ NB(r, p)` distribution
 /// where `X =` the number of failures prior to the `r`th success.
@@ -3442,21 +3399,15 @@ pub fn nb2_pmf(x: u64, r: u64, p: f64) -> f64 {
 /// println!("P(X<=x): {}", nb2_cdf(3, 2, 0.6));
 /// ```
 pub fn nb2_cdf(x: u64, r: u64, p: f64) -> f64 {
-    if  r < 1 || p <= 0.0 || p > 1.0 {
+    if r < 1 || p <= 0.0 || p > 1.0 {
         println!("NAN produced. Error in function nb2_cdf");
         return f64::NAN;
     }
-    if x < r {
-        return 0.0;
-    }
+    if x < r { return 0.0; }
+    if p == 1.0 { return 1.0; }
 
-    let mut sum = 0.0;
-    for i in r..=x {
-        sum += nb2_pmf(i, r, p);
-    }
-    sum
+    betai(p, r as f64, (x - r + 1) as f64)
 }
-
 
 /// Computes a percentile for `X ~ NB(r,p)`
 /// where `X =` the trial on which the `r`th success is observed.
@@ -3475,25 +3426,25 @@ pub fn nb2_cdf(x: u64, r: u64, p: f64) -> f64 {
 /// println!("Percentile: {}", nb2_per(0.8, 2, 0.6));
 /// ```
 pub fn nb2_per(q: f64, r: u64, p: f64) -> u64 {
-
-    if  r < 1 || p <= 0.0 || p > 1.0 || q < 0.0 || q > 1.0 {
+    if r < 1 || p <= 0.0 || p > 1.0 || q < 0.0 || q > 1.0 {
         println!("NAN produced. Error in function nb2_per");
         return f64::NAN as u64;
     }
-    if q == 0.0 {
-        return r;
-    }
-    if q == 1.0 {
-        return f64::INFINITY as u64;
-    }
+
+    if q == 0.0 { return r; }
+    if q == 1.0 { return u64::MAX; } // Safely replaced f64::INFINITY as u64
 
     let mut x = r;
-    while nb2_cdf(x, r, p) < q {
+    let mut sum = nb2_pmf(x, r, p);
+
+    // Accumulate the PMF
+    while sum < q {
         x += 1;
+        sum += nb2_pmf(x, r, p);
     }
+
     x
 }
-
 
 /// Random draw from `X ~ NB(r, p)` distribution
 /// where `X =` the trial on which the `r`th success is observed.
@@ -3866,60 +3817,93 @@ pub fn gamma(x: f64) -> f64 {
     gamma_ln(x).exp()
 }
 
-
 /// Factorial (`u64`).
-/// - `x = 1,2,3,...`
+/// Note: Will overflow `u64` capacity at x = 21. Iterative to prevent stack overflow.
 pub fn fact_i(x: u64) -> u64 {
-    if x > 1 {
-        x * fact_i(x - 1)
-    } else {
-        1
+    let mut res = 1;
+    for i in 2..=x {
+        res *= i;
     }
+    res
 }
-
 
 /// Log factorial (`u64`).
 /// - `x = 1,2,3,...`
 pub fn factln_i(x: u64) -> f64 {
-    if x > 1 {
-        (x as f64).ln() + factln_i(x - 1)
-    } else {
-        0.0
-    }
+    gamma_ln(x as f64 + 1.0)
 }
-
 
 /// Log factorial (`u64`).
 /// - `x = 1,2,3,...`
 pub fn fact_ln_u(x: u64) -> f64 {
-    if x > 1 {
-        (x as f64).ln() + fact_ln_u(x - 1)
-    } else {
-        0.0
-    }
+    gamma_ln(x as f64 + 1.0)
 }
-
 
 /// Generalized factorial (`f64`).
 /// - `x > 0`
 pub fn fact_f(x: f64) -> f64 {
-    if x > 1.0 {
-        x * fact_f(x - 1.0)
-    } else {
-        x * gamma(x)
-    }
+    gamma(x + 1.0)
 }
-
 
 /// Log Generalized factorial (`f64`).
 /// - `x > 0`
 pub fn factln_f(x: f64) -> f64 {
-    if x > 1.0 {
-        x.ln() + fact_f(x - 1.0).ln()
-    } else {
-        x + gamma_ln(x)
-    }
+    gamma_ln(x + 1.0)
 }
+
+// /// Factorial (`u64`).
+// /// - `x = 1,2,3,...`
+// pub fn fact_i(x: u64) -> u64 {
+//     if x > 1 {
+//         x * fact_i(x - 1)
+//     } else {
+//         1
+//     }
+// }
+//
+//
+// /// Log factorial (`u64`).
+// /// - `x = 1,2,3,...`
+// pub fn factln_i(x: u64) -> f64 {
+//     if x > 1 {
+//         (x as f64).ln() + factln_i(x - 1)
+//     } else {
+//         0.0
+//     }
+// }
+//
+//
+// /// Log factorial (`u64`).
+// /// - `x = 1,2,3,...`
+// pub fn fact_ln_u(x: u64) -> f64 {
+//     if x > 1 {
+//         (x as f64).ln() + fact_ln_u(x - 1)
+//     } else {
+//         0.0
+//     }
+// }
+//
+//
+// /// Generalized factorial (`f64`).
+// /// - `x > 0`
+// pub fn fact_f(x: f64) -> f64 {
+//     if x > 1.0 {
+//         x * fact_f(x - 1.0)
+//     } else {
+//         x * gamma(x)
+//     }
+// }
+//
+//
+// /// Log Generalized factorial (`f64`).
+// /// - `x > 0`
+// pub fn factln_f(x: f64) -> f64 {
+//     if x > 1.0 {
+//         x.ln() + fact_f(x - 1.0).ln()
+//     } else {
+//         x + gamma_ln(x)
+//     }
+// }
 
 
 /// Combination
