@@ -1,6 +1,6 @@
 [package]
 name = "ruststat"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2021"
 license = "MIT"
 keywords = ["probability", "distribution", "statistics"]
@@ -11,5 +11,5 @@ documentation = "https://docs.rs/ruststat"
 repository = "https://github.com/mabognar/ruststat"
 
 [dependencies]
-rand = "0.10.0"
+rand = "0.10.3"
 
