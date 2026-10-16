@@ -48,12 +48,12 @@ impl Pareto1Dist {
         pareto4_ranvec(n, self.sigma, self.sigma, 1.0, self.alpha)
     }
     pub fn mean(&mut self) -> f64 {
-        self.sigma + self.sigma * gamma(self.alpha-1.0) *
-            gamma(1.0 + 1.0) / gamma(self.alpha)
+        if self.alpha <= 1.0 { return f64::NAN; }
+        self.sigma + self.sigma * gamma(self.alpha - 1.0) * gamma(2.0) / gamma(self.alpha)
     }
     pub fn var(&mut self) -> f64 {
-        self.sigma.powi(2) * gamma(self.alpha - 1.0 * 2.0) *
-            gamma(1.0 + 1.0 * 2.0) / gamma(self.alpha) - self.mean().powi(2)
+        if self.alpha <= 2.0 { return f64::NAN; }
+        self.sigma.powi(2) * gamma(self.alpha - 2.0) * gamma(3.0) / gamma(self.alpha) - (self.mean() - self.sigma).powi(2)
     }
     pub fn sd(&mut self) -> f64 {
         self.var().sqrt()
@@ -111,12 +111,12 @@ impl Pareto2Dist {
         pareto4_ranvec(n,self.mu, self.sigma, 1.0, self.alpha)
     }
     pub fn mean(&mut self) -> f64 {
-        self.mu + self.sigma * gamma(self.alpha-1.0) *
-            gamma(1.0 + 1.0) / gamma(self.alpha)
+        if self.alpha <= 1.0 { return f64::NAN; }
+        self.mu + self.sigma * gamma(self.alpha - 1.0) * gamma(2.0) / gamma(self.alpha)
     }
     pub fn var(&mut self) -> f64 {
-        self.sigma.powi(2) * gamma(self.alpha - 1.0 * 2.0) *
-            gamma(1.0 + 1.0 * 2.0) / gamma(self.alpha) - self.mean().powi(2)
+        if self.alpha <= 2.0 { return f64::NAN; }
+        self.sigma.powi(2) * gamma(self.alpha - 2.0) * gamma(3.0) / gamma(self.alpha) - (self.mean() - self.mu).powi(2)
     }
     pub fn sd(&mut self) -> f64 {
         self.var().sqrt()
@@ -174,12 +174,12 @@ impl Pareto3Dist {
         pareto4_ranvec(n,self.mu, self.sigma, self.gamma, 1.0)
     }
     pub fn mean(&mut self) -> f64 {
-        self.mu + self.sigma * gamma(1.0-self.gamma) *
-            gamma(1.0 + self.gamma) / gamma(1.0)
+        if self.gamma >= 1.0 { return f64::NAN; }
+        self.mu + self.sigma * gamma(1.0 - self.gamma) * gamma(1.0 + self.gamma) / gamma(1.0)
     }
     pub fn var(&mut self) -> f64 {
-        self.sigma.powi(2) * gamma(1.0 - self.gamma * 2.0) *
-            gamma(1.0 + self.gamma * 2.0) / gamma(1.0) - self.mean().powi(2)
+        if self.gamma >= 0.5 { return f64::NAN; }
+        self.sigma.powi(2) * gamma(1.0 - self.gamma * 2.0) * gamma(1.0 + self.gamma * 2.0) / gamma(1.0) - (self.mean() - self.mu).powi(2)
     }
     pub fn sd(&mut self) -> f64 {
         self.var().sqrt()
@@ -239,12 +239,12 @@ impl Pareto4Dist {
         pareto4_ranvec(n,self.mu, self.sigma, self.gamma, self.alpha)
     }
     pub fn mean(&mut self) -> f64 {
-        self.mu + self.sigma * gamma(self.alpha-self.gamma) *
-            gamma(1.0 + self.gamma) / gamma(self.alpha)
+        if self.alpha <= self.gamma { return f64::NAN; }
+        self.mu + self.sigma * gamma(self.alpha - self.gamma) * gamma(1.0 + self.gamma) / gamma(self.alpha)
     }
     pub fn var(&mut self) -> f64 {
-        self.sigma.powi(2) * gamma(self.alpha - self.gamma * 2.0) *
-            gamma(1.0 + self.gamma * 2.0) / gamma(self.alpha) - self.mean().powi(2)
+        if self.alpha <= self.gamma * 2.0 { return f64::NAN; }
+        self.sigma.powi(2) * gamma(self.alpha - self.gamma * 2.0) * gamma(1.0 + self.gamma * 2.0) / gamma(self.alpha) - (self.mean() - self.mu).powi(2)
     }
     pub fn sd(&mut self) -> f64 {
         self.var().sqrt()
