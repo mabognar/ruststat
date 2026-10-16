@@ -1,6 +1,6 @@
 # ruststat - Tools for working with many common probability distributions
 
-## Version 0.3.1
+## Version 0.3.2
 
 - Added Logistic distribution
 
@@ -38,7 +38,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-ruststat = "0.3.1"  # Replace with the latest version
+ruststat = "0.3.2"  # Replace with the latest version
 ```
 
 ## Quick Start
