@@ -120,9 +120,13 @@ pub fn exp_cdf(x: f64, lambda: f64) -> f64 {
 /// println!("Percentile: {}", exp_per(0.8, 8.0));
 /// ```
 pub fn exp_per(p: f64, lambda: f64) -> f64 {
+    if lambda <= 0.0 || p < 0.0 || p > 1.0 {
+        println!("NAN produced. Error in function exp_per");
+        return f64::NAN;
+    }
+
     -(1.0-p).ln() / lambda
 }
-
 
 /// Random draw from `X ~ Exp(lambda)` distribution.
 ///

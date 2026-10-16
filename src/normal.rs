@@ -78,9 +78,9 @@ pub fn normal_pdf(x: f64, mu: f64, sigma: f64) -> f64 {
         println!("NAN produced. Error in function normal_pdf");
         return f64::NAN;
     }
-    (-0.5*(2.0*PI*sigma).ln() -0.5*((x-mu)/sigma).powi(2)).exp()
-}
 
+    (-0.5 * (2.0 * PI * sigma.powi(2)).ln() - 0.5 * ((x - mu) / sigma).powi(2)).exp()
+}
 
 /// Computes cumulative distribution function (cdf) for `X ~ Normal(mu, sigma)`.
 ///

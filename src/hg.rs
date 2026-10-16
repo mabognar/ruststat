@@ -127,22 +127,23 @@ pub fn hg_pmf(x: u64, n: u64, N: u64, M: u64) -> f64 {
 /// ```
 #[allow(non_snake_case)]
 pub fn hg_cdf(x: u64, n: u64, N: u64, M: u64) -> f64 {
-    if  n < 1 || N < 1 || M < 1 || M > N || n > N {
+    if n < 1 || N < 1 || M > N || n > N {
         println!("NAN produced. Error in function hg_cdf");
         return f64::NAN;
     }
-    if x > M || (n-x) > (N-M) {
-        return 0.0;
-    }
-    if x > n {
+
+    if x >= n || x >= M {
         return 1.0;
+    }
+
+    if (n - x) > (N - M) {
+        return 0.0;
     }
 
     let mut sum = 0.0;
     for i in 0..=x {
         sum += hg_pmf(i, n, N, M);
     }
-
     sum
 }
 
