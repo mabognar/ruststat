@@ -1,8 +1,8 @@
 # ruststat - Tools for working with many common probability distributions
 
-## Version 0.3.3
+## Version 0.4.0
 
-- Bug fix for Pareto moments
+- Many new distributions: Weibull, Cauchy, Laplace, Triangular, Bernoulli, Discrete Uniform, Burr (Type XII), Log-Logistic, Rayleigh, Inverse Gamma, Inverse Gaussian, Fréchet, Zero-Inflated Poisson (ZIP), and Zero-Inflated Negative Binomial (ZINB).
 
 ## Features
 
@@ -10,27 +10,44 @@
 - Cumulative distribution function (cdf)
 - Percentiles (inverse cdf)
 - Random number generation
-- Mean, variance
+- Mean, variance, and standard deviation
 
 ## Distributions
 
+### Continuous
 - Beta
+- Burr (Type XII)
+- Cauchy
 - Chi-square
+- Continuous uniform
 - Exponential
 - F
+- Fréchet
 - Gamma
 - Gumbel
+- Inverse Gamma
+- Inverse Gaussian (Wald)
+- Laplace (Double Exponential)
+- Log-Logistic (Fisk)
 - Logistic
-- Normal
 - Log-normal
-- Pareto (1 thru 4)
+- Normal
+- Pareto (Types I, II, III, IV)
+- Rayleigh
 - Student's t
-- Continuous uniform
+- Triangular
+- Weibull
+
+### Discrete
+- Bernoulli
 - Binomial
+- Discrete uniform
 - Geometric (2 parameterizations)
 - Hypergeometric
 - Negative binomial (2 parameterizations)
 - Poisson
+- Zero-Inflated Negative Binomial (ZINB)
+- Zero-Inflated Poisson (ZIP)
 
 ## Installation
 
@@ -38,7 +55,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-ruststat = "0.3.3"  # Replace with the latest version
+ruststat = "0.4.0"
 ```
 
 ## Quick Start

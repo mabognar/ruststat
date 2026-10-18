@@ -1,10 +1,15 @@
-use ruststat::beta::beta_per;
-use ruststat::{beta_cdf, bin_cdf, bin_per, chisq_cdf, chisq_per, exp_cdf, exp_per,
-               f_cdf, f_per, gamma_cdf, gamma_per, geo2_cdf, geo2_per, geo_cdf,
-               geo_per, gumbel_cdf, gumbel_per, hg_cdf, hg_per, logistic_cdf, logistic_per,
-               lognormal_cdf, lognormal_per, nb2_cdf, nb2_per, nb_cdf, nb_per,
-               normal_cdf, normal_per, pareto4_cdf, pareto4_per, pois_cdf, pois_per,
-               t_cdf, t_per, unif_cdf, unif_per};
+use ruststat::{bernoulli_cdf, bernoulli_per, beta_cdf, beta_per, bin_cdf, bin_per,
+               burr_cdf, burr_per, cauchy_cdf, cauchy_per, chisq_cdf, chisq_per,
+               discrete_unif_cdf, discrete_unif_per, exp_cdf, exp_per, f_cdf, f_per,
+               frechet_cdf, frechet_per, gamma_cdf, gamma_per, geo2_cdf, geo2_per,
+               geo_cdf, geo_per, gumbel_cdf, gumbel_per, hg_cdf, hg_per,
+               invgamma_cdf, invgamma_per, invgauss_cdf, invgauss_per,
+               laplace_cdf, laplace_per, logistic_cdf, logistic_per,
+               loglogistic_cdf, loglogistic_per, lognormal_cdf, lognormal_per,
+               nb2_cdf, nb2_per, nb_cdf, nb_per, normal_cdf, normal_per,
+               pareto4_cdf, pareto4_per, pois_cdf, pois_per, rayleigh_cdf, rayleigh_per,
+               t_cdf, t_per, triangular_cdf, triangular_per, unif_cdf, unif_per,
+               weibull_cdf, weibull_per, zinb_cdf, zinb_per, zip_cdf, zip_per};
 
 macro_rules! assert_approx_eq {
     ($a:expr, $b:expr, $eps:expr) => {{
@@ -32,6 +37,14 @@ fn test_distribution_percentile_roundtrips() {
         let x_beta = beta_per(p, 0.5, 2.0);
         assert_approx_eq!(p, beta_cdf(x_beta, 0.5, 2.0), tolerance);
 
+        // Test Burr(1.0, 2.0, 3.0)
+        let x_burr = burr_per(p, 1.0, 2.0, 3.0);
+        assert_approx_eq!(p, burr_cdf(x_burr, 1.0, 2.0, 3.0), tolerance);
+
+        // Test Cauchy(1.0, 2.0)
+        let x_cauchy = cauchy_per(p, 1.0, 2.0);
+        assert_approx_eq!(p, cauchy_cdf(x_cauchy, 1.0, 2.0), tolerance);
+
         // Test Chi-Square(8.0)
         let x_chisq = chisq_per(p, 8.0);
         assert_approx_eq!(p, chisq_cdf(x_chisq, 8.0), tolerance);
@@ -44,6 +57,10 @@ fn test_distribution_percentile_roundtrips() {
         let x_f = f_per(p, 4.0, 18.0);
         assert_approx_eq!(p, f_cdf(x_f, 4.0, 18.0), tolerance);
 
+        // Test Frechet(1.0, 2.0, 3.0)
+        let x_frechet = frechet_per(p, 1.0, 2.0, 3.0);
+        assert_approx_eq!(p, frechet_cdf(x_frechet, 1.0, 2.0, 3.0), tolerance);
+
         // Test Gamma(4.0, 2.0)
         let x_gamma = gamma_per(p, 4.0, 2.0);
         assert_approx_eq!(p, gamma_cdf(x_gamma, 4.0, 2.0), tolerance);
@@ -52,9 +69,25 @@ fn test_distribution_percentile_roundtrips() {
         let x_gumbel = gumbel_per(p, 4.2, 1.8);
         assert_approx_eq!(p, gumbel_cdf(x_gumbel, 4.2, 1.8), tolerance);
 
+        // Test Inverse Gamma(2.0, 3.0)
+        let x_invgamma = invgamma_per(p, 2.0, 3.0);
+        assert_approx_eq!(p, invgamma_cdf(x_invgamma, 2.0, 3.0), tolerance);
+
+        // Test Inverse Gaussian(1.0, 2.0)
+        let x_invgauss = invgauss_per(p, 1.0, 2.0);
+        assert_approx_eq!(p, invgauss_cdf(x_invgauss, 1.0, 2.0), 1e-6); // Uses Bisection, limit tolerance slightly
+
+        // Test Laplace(5.0, 2.0)
+        let x_laplace = laplace_per(p, 5.0, 2.0);
+        assert_approx_eq!(p, laplace_cdf(x_laplace, 5.0, 2.0), tolerance);
+
         // Test Logistic(0.0, 1.0)
         let x_logistic = logistic_per(p, 0.0, 1.0);
         assert_approx_eq!(p, logistic_cdf(x_logistic, 0.0, 1.0), tolerance);
+
+        // Test Log-Logistic(1.0, 2.0)
+        let x_loglogistic = loglogistic_per(p, 1.0, 2.0);
+        assert_approx_eq!(p, loglogistic_cdf(x_loglogistic, 1.0, 2.0), tolerance);
 
         // Test Log-Normal(0.0, 1.0)
         let x_lognormal = lognormal_per(p, 0.0, 1.0);
@@ -68,21 +101,41 @@ fn test_distribution_percentile_roundtrips() {
         let x_pareto = pareto4_per(p, 0.0, 1.0, 2.0, 0.5);
         assert_approx_eq!(p, pareto4_cdf(x_pareto, 0.0, 1.0, 2.0, 0.5), tolerance);
 
+        // Test Rayleigh(2.0)
+        let x_rayleigh = rayleigh_per(p, 2.0);
+        assert_approx_eq!(p, rayleigh_cdf(x_rayleigh, 2.0), tolerance);
+
         // Test Student's t(25.0)
         let x_t = t_per(p, 25.0);
         assert_approx_eq!(p, t_cdf(x_t, 25.0), tolerance);
+
+        // Test Triangular(1.0, 10.0, 4.0)
+        let x_triangular = triangular_per(p, 1.0, 10.0, 4.0);
+        assert_approx_eq!(p, triangular_cdf(x_triangular, 1.0, 10.0, 4.0), tolerance);
 
         // Test Uniform(1.0, 5.0)
         let x_unif = unif_per(p, 1.0, 5.0);
         assert_approx_eq!(p, unif_cdf(x_unif, 1.0, 5.0), tolerance);
 
+        // Test Weibull(2.0, 1.5)
+        let x_weibull = weibull_per(p, 2.0, 1.5);
+        assert_approx_eq!(p, weibull_cdf(x_weibull, 2.0, 1.5), tolerance);
+
         // ========================================================
         // DISCRETE DISTRIBUTIONS (Step functions: cdf(x) >= p)
         // ========================================================
 
+        // Test Bernoulli(0.7)
+        let x_bernoulli = bernoulli_per(p, 0.7);
+        assert!(bernoulli_cdf(x_bernoulli, 0.7) >= p - tolerance);
+
         // Test Binomial(100, 0.9)
         let x_bin = bin_per(p, 100, 0.9);
         assert!(bin_cdf(x_bin, 100, 0.9) >= p - tolerance);
+
+        // Test Discrete Uniform(1, 5)
+        let x_discrete_unif = discrete_unif_per(p, 1, 5);
+        assert!(discrete_unif_cdf(x_discrete_unif, 1, 5) >= p - tolerance);
 
         // Test Geometric(0.2)
         let x_geo = geo_per(p, 0.2);
@@ -107,6 +160,14 @@ fn test_distribution_percentile_roundtrips() {
         // Test Poisson(2.5)
         let x_pois = pois_per(p, 2.5);
         assert!(pois_cdf(x_pois, 2.5) >= p - tolerance);
+
+        // Test ZIP(2.5, 0.2)
+        let x_zip = zip_per(p, 2.5, 0.2);
+        assert!(zip_cdf(x_zip, 2.5, 0.2) >= p - tolerance);
+
+        // Test ZINB(4, 0.2, 0.15)
+        let x_zinb = zinb_per(p, 4, 0.2, 0.15);
+        assert!(zinb_cdf(x_zinb, 4, 0.2, 0.15) >= p - tolerance);
     }
 }
 
