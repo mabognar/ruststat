@@ -1,9 +1,3 @@
-// ==========================================
-// ==========================================
-// Zero-Inflated Negative Binomial
-// ==========================================
-// ==========================================
-
 use rand::random;
 use crate::{nb_cdf, nb_pmf, nb_ran};
 
@@ -64,6 +58,21 @@ impl ZinbDist {
 }
 
 /// Computes probability mass function (pmf) for `X ~ ZINB(r, p, pi)`.
+///
+/// # Parameters
+/// - Target successes: `r = 1, 2, 3, ...`
+/// - Probability of success: `p` (`0 < p <= 1`)
+/// - Probability of excess zeros: `pi` (`0 <= pi <= 1`)
+///
+/// # Support
+/// - `x = 0, 1, 2, ...`
+///
+/// # Example
+/// Suppose `X ~ ZINB(r=4, p=0.2, pi=0.15)`. Use
+/// ```
+/// use ruststat::zinb_pmf;
+/// println!("P(X=0): {}", zinb_pmf(0, 4, 0.2, 0.15));
+/// ```
 pub fn zinb_pmf(x: u64, r: u64, p: f64, pi: f64) -> f64 {
     if r < 1 || p <= 0.0 || p > 1.0 || pi < 0.0 || pi > 1.0 {
         println!("NAN produced. Error in function zinb_pmf");
@@ -77,6 +86,21 @@ pub fn zinb_pmf(x: u64, r: u64, p: f64, pi: f64) -> f64 {
 }
 
 /// Computes cumulative distribution function (cdf) for `X ~ ZINB(r, p, pi)`.
+///
+/// # Parameters
+/// - Target successes: `r = 1, 2, 3, ...`
+/// - Probability of success: `p` (`0 < p <= 1`)
+/// - Probability of excess zeros: `pi` (`0 <= pi <= 1`)
+///
+/// # Support
+/// - `x = 0, 1, 2, ...`
+///
+/// # Example
+/// Suppose `X ~ ZINB(r=4, p=0.2, pi=0.15)`. Use
+/// ```
+/// use ruststat::zinb_cdf;
+/// println!("P(X<=2): {}", zinb_cdf(2, 4, 0.2, 0.15));
+/// ```
 pub fn zinb_cdf(x: u64, r: u64, p: f64, pi: f64) -> f64 {
     if r < 1 || p <= 0.0 || p > 1.0 || pi < 0.0 || pi > 1.0 {
         println!("NAN produced. Error in function zinb_cdf");
@@ -86,6 +110,24 @@ pub fn zinb_cdf(x: u64, r: u64, p: f64, pi: f64) -> f64 {
 }
 
 /// Computes a percentile for `X ~ ZINB(r, p, pi)`.
+///
+/// # Note
+/// Determines the smallest (integer) value of `x` such that `P(X <= x) >= q`.
+///
+/// # Parameters
+/// - Target successes: `r = 1, 2, 3, ...`
+/// - Probability of success: `p` (`0 < p <= 1`)
+/// - Probability of excess zeros: `pi` (`0 <= pi <= 1`)
+///
+/// # Support
+/// - `x = 0, 1, 2, ...`
+///
+/// # Example
+/// Suppose `X ~ ZINB(r=4, p=0.2, pi=0.15)`. To find the 80th percentile, use `q=0.80` and
+/// ```
+/// use ruststat::zinb_per;
+/// println!("Percentile: {}", zinb_per(0.8, 4, 0.2, 0.15));
+/// ```
 pub fn zinb_per(q: f64, r: u64, p: f64, pi: f64) -> u64 {
     if r < 1 || p <= 0.0 || p > 1.0 || pi < 0.0 || pi > 1.0 || q < 0.0 || q > 1.0 {
         println!("NAN produced. Error in function zinb_per");
@@ -105,6 +147,21 @@ pub fn zinb_per(q: f64, r: u64, p: f64, pi: f64) -> u64 {
 }
 
 /// Random draw from `X ~ ZINB(r, p, pi)` distribution.
+///
+/// # Parameters
+/// - Target successes: `r = 1, 2, 3, ...`
+/// - Probability of success: `p` (`0 < p <= 1`)
+/// - Probability of excess zeros: `pi` (`0 <= pi <= 1`)
+///
+/// # Support
+/// - `x = 0, 1, 2, ...`
+///
+/// # Example
+/// Suppose `X ~ ZINB(r=4, p=0.2, pi=0.15)`. Use
+/// ```
+/// use ruststat::zinb_ran;
+/// println!("Random draw: {}", zinb_ran(4, 0.2, 0.15));
+/// ```
 pub fn zinb_ran(r: u64, p: f64, pi: f64) -> u64 {
     if r < 1 || p <= 0.0 || p > 1.0 || pi < 0.0 || pi > 1.0 {
         println!("NAN produced. Error in function zinb_ran");
@@ -118,7 +175,22 @@ pub fn zinb_ran(r: u64, p: f64, pi: f64) -> u64 {
     }
 }
 
-/// Save random draws from `X ~ ZINB(r, p, pi)` distribution into a `Vec`
+/// Save random draws from `X ~ ZINB(r, p, pi)` distribution into a `Vec`.
+///
+/// # Parameters
+/// - Target successes: `r = 1, 2, 3, ...`
+/// - Probability of success: `p` (`0 < p <= 1`)
+/// - Probability of excess zeros: `pi` (`0 <= pi <= 1`)
+///
+/// # Support
+/// - `x = 0, 1, 2, ...`
+///
+/// # Example
+/// Suppose `X ~ ZINB(r=4, p=0.2, pi=0.15)`. Use
+/// ```
+/// use ruststat::zinb_ranvec;
+/// println!("Random Vec: {:?}", zinb_ranvec(10, 4, 0.2, 0.15));
+/// ```
 pub fn zinb_ranvec(nn: u64, r: u64, p: f64, pi: f64) -> Vec<u64> {
     if r < 1 || p <= 0.0 || p > 1.0 || pi < 0.0 || pi > 1.0 {
         println!("Bad argument to zinb_ranvec");

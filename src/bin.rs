@@ -1,9 +1,3 @@
-// ==========================================
-// ==========================================
-// Binomial Distribution
-// ==========================================
-// ==========================================
-
 use crate::{betai, factln_u};
 use crate::unif::unif_ran;
 
@@ -112,9 +106,8 @@ pub fn bin_cdf(x: u64, n: u64, p: f64) -> f64 {
     }
     if x >= n { return 1.0; }
     if p == 0.0 { return 1.0; }
-    if p == 1.0 { return 0.0; } // Caught by x >= n if it was a guaranteed success
+    if p == 1.0 { return 0.0; }
 
-    // P(X <= x) = I_{1-p}(n-x, x+1)
     betai(1.0 - p, (n - x) as f64, (x + 1) as f64)
 }
 
@@ -143,7 +136,6 @@ pub fn bin_per(q: f64, n: u64, p: f64) -> u64 {
     let mut x = 0;
     let mut sum = bin_pmf(0, n, p);
 
-    // Accumulate the PMF to avoid recalculating the CDF from zero
     while sum < q && x < n {
         x += 1;
         sum += bin_pmf(x, n, p);

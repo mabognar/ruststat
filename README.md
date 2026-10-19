@@ -1,8 +1,8 @@
-# ruststat - Tools for working with many common probability distributions
+# ruststat - Tools for working with probability distributions
 
 ## Version 0.4.0
 
-- Many new distributions: Weibull, Cauchy, Laplace, Triangular, Bernoulli, Discrete Uniform, Burr (Type XII), Log-Logistic, Rayleigh, Inverse Gamma, Inverse Gaussian, Fréchet, Zero-Inflated Poisson (ZIP), and Zero-Inflated Negative Binomial (ZINB).
+- Extensive testing added. Many new distributions: Weibull, Cauchy, Laplace, Triangular, Bernoulli, Discrete Uniform, Burr (Type XII), Log-Logistic, Rayleigh, Inverse Gamma, Inverse Gaussian, Fréchet, Zero-Inflated Poisson (ZIP), and Zero-Inflated Negative Binomial (ZINB).
 
 ## Features
 
@@ -14,7 +14,7 @@
 
 ## Distributions
 
-### Continuous
+#### Continuous
 - Beta
 - Burr (Type XII)
 - Cauchy
@@ -38,7 +38,7 @@
 - Triangular
 - Weibull
 
-### Discrete
+#### Discrete
 - Bernoulli
 - Binomial
 - Discrete uniform

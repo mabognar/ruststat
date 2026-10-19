@@ -1,9 +1,3 @@
-// ==========================================
-// ==========================================
-// HyperGeometric Distribution
-// ==========================================
-// ==========================================
-
 use crate::{factln_u};
 use crate::unif::unif_ran;
 
@@ -87,7 +81,7 @@ impl HGDist {
 /// ```
 #[allow(non_snake_case)]
 pub fn hg_pmf(x: u64, n: u64, N: u64, M: u64) -> f64 {
-    if  n < 1 || N < 1 || M > N || n > N { // Removed M < 1 to allow 0 successes in pop
+    if  n < 1 || N < 1 || M > N || n > N {
         println!("NAN produced. Error in function hg_pmf");
         return f64::NAN;
     }

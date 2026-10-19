@@ -1,9 +1,3 @@
-// ==========================================
-// ==========================================
-// Rayleigh Distribution
-// ==========================================
-// ==========================================
-
 use std::f64::consts::PI;
 use rand::random;
 
@@ -58,6 +52,19 @@ impl RayleighDist {
 }
 
 /// Computes probability density function (pdf) for `X ~ Rayleigh(sigma)`.
+///
+/// # Parameters
+/// - Scale: `sigma > 0`
+///
+/// # Support
+/// - `x > 0`
+///
+/// # Example
+/// Suppose `X ~ Rayleigh(sigma=2.0)`. Use
+/// ```
+/// use ruststat::rayleigh_pdf;
+/// println!("Probability density function f(1.5): {}", rayleigh_pdf(1.5, 2.0));
+/// ```
 pub fn rayleigh_pdf(x: f64, sigma: f64) -> f64 {
     if sigma <= 0.0 {
         println!("NAN produced. Error in function rayleigh_pdf");
@@ -70,6 +77,19 @@ pub fn rayleigh_pdf(x: f64, sigma: f64) -> f64 {
 }
 
 /// Computes cumulative distribution function (cdf) for `X ~ Rayleigh(sigma)`.
+///
+/// # Parameters
+/// - Scale: `sigma > 0`
+///
+/// # Support
+/// - `x > 0`
+///
+/// # Example
+/// Suppose `X ~ Rayleigh(sigma=2.0)`. Use
+/// ```
+/// use ruststat::rayleigh_cdf;
+/// println!("P(X<=1.5): {}", rayleigh_cdf(1.5, 2.0));
+/// ```
 pub fn rayleigh_cdf(x: f64, sigma: f64) -> f64 {
     if sigma <= 0.0 {
         println!("NAN produced. Error in function rayleigh_cdf");
@@ -82,6 +102,22 @@ pub fn rayleigh_cdf(x: f64, sigma: f64) -> f64 {
 }
 
 /// Computes a percentile for `X ~ Rayleigh(sigma)`.
+///
+/// # Note
+/// Determines the value of `x` such that `P(X <= x) = p`.
+///
+/// # Parameters
+/// - Scale: `sigma > 0`
+///
+/// # Support
+/// - `x > 0`
+///
+/// # Example
+/// Suppose `X ~ Rayleigh(sigma=2.0)`. To find the 80th percentile, use `p=0.80` and
+/// ```
+/// use ruststat::rayleigh_per;
+/// println!("Percentile: {}", rayleigh_per(0.8, 2.0));
+/// ```
 pub fn rayleigh_per(p: f64, sigma: f64) -> f64 {
     if sigma <= 0.0 || p < 0.0 || p > 1.0 {
         println!("NAN produced. Error in function rayleigh_per");
@@ -91,6 +127,19 @@ pub fn rayleigh_per(p: f64, sigma: f64) -> f64 {
 }
 
 /// Random draw from `X ~ Rayleigh(sigma)` distribution.
+///
+/// # Parameters
+/// - Scale: `sigma > 0`
+///
+/// # Support
+/// - `x > 0`
+///
+/// # Example
+/// Suppose `X ~ Rayleigh(sigma=2.0)`. Use
+/// ```
+/// use ruststat::rayleigh_ran;
+/// println!("Random draw: {}", rayleigh_ran(2.0));
+/// ```
 pub fn rayleigh_ran(sigma: f64) -> f64 {
     if sigma <= 0.0 {
         println!("Bad argument to rayleigh_ran");
@@ -100,7 +149,20 @@ pub fn rayleigh_ran(sigma: f64) -> f64 {
     sigma * (-2.0 * (1.0 - u).ln()).sqrt()
 }
 
-/// Save random draws from `X ~ Rayleigh(sigma)` distribution into a `Vec`
+/// Save random draws from `X ~ Rayleigh(sigma)` distribution into a `Vec`.
+///
+/// # Parameters
+/// - Scale: `sigma > 0`
+///
+/// # Support
+/// - `x > 0`
+///
+/// # Example
+/// Suppose `X ~ Rayleigh(sigma=2.0)`. Use
+/// ```
+/// use ruststat::rayleigh_ranvec;
+/// println!("Random Vec: {:?}", rayleigh_ranvec(10, 2.0));
+/// ```
 pub fn rayleigh_ranvec(n: u64, sigma: f64) -> Vec<f64> {
     if sigma <= 0.0 {
         println!("Bad argument to rayleigh_ranvec");

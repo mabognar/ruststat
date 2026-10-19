@@ -1,9 +1,3 @@
-// ==========================================
-// ==========================================
-// Poisson Distribution
-// ==========================================
-// ==========================================
-
 use crate::{factln_u, gammq};
 use crate::unif::unif_ran;
 
@@ -76,7 +70,6 @@ pub fn pois_pmf(x: u64, lambda: f64) -> f64 {
         return f64::NAN;
     }
     (-lambda + (x as f64)*lambda.ln() - factln_u(x)).exp()
-    // return (-lambda).exp() * lambda.powi(x) / (fact_i(x) as f64);
 }
 
 

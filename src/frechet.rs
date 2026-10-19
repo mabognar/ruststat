@@ -1,9 +1,3 @@
-// ==========================================
-// ==========================================
-// Fréchet Distribution
-// ==========================================
-// ==========================================
-
 use rand::random;
 use crate::gamma;
 
@@ -70,6 +64,21 @@ impl FrechetDist {
 }
 
 /// Computes probability density function (pdf) for `X ~ Frechet(mu, sigma, alpha)`.
+///
+/// # Parameters
+/// - Location: `-infinity < mu < infinity`
+/// - Scale: `sigma > 0`
+/// - Shape: `alpha > 0`
+///
+/// # Support
+/// - `x > mu`
+///
+/// # Example
+/// Suppose `X ~ Frechet(mu=0.0, sigma=1.0, alpha=3.0)`. Use
+/// ```
+/// use ruststat::frechet_pdf;
+/// println!("Probability density function f(1.5): {}", frechet_pdf(1.5, 0.0, 1.0, 3.0));
+/// ```
 pub fn frechet_pdf(x: f64, mu: f64, sigma: f64, alpha: f64) -> f64 {
     if sigma <= 0.0 || alpha <= 0.0 {
         println!("NAN produced. Error in function frechet_pdf");
@@ -83,6 +92,21 @@ pub fn frechet_pdf(x: f64, mu: f64, sigma: f64, alpha: f64) -> f64 {
 }
 
 /// Computes cumulative distribution function (cdf) for `X ~ Frechet(mu, sigma, alpha)`.
+///
+/// # Parameters
+/// - Location: `-infinity < mu < infinity`
+/// - Scale: `sigma > 0`
+/// - Shape: `alpha > 0`
+///
+/// # Support
+/// - `x > mu`
+///
+/// # Example
+/// Suppose `X ~ Frechet(mu=0.0, sigma=1.0, alpha=3.0)`. Use
+/// ```
+/// use ruststat::frechet_cdf;
+/// println!("P(X<=1.5): {}", frechet_cdf(1.5, 0.0, 1.0, 3.0));
+/// ```
 pub fn frechet_cdf(x: f64, mu: f64, sigma: f64, alpha: f64) -> f64 {
     if sigma <= 0.0 || alpha <= 0.0 {
         println!("NAN produced. Error in function frechet_cdf");
@@ -96,6 +120,24 @@ pub fn frechet_cdf(x: f64, mu: f64, sigma: f64, alpha: f64) -> f64 {
 }
 
 /// Computes a percentile for `X ~ Frechet(mu, sigma, alpha)`.
+///
+/// # Note
+/// Determines the value of `x` such that `P(X <= x) = p`.
+///
+/// # Parameters
+/// - Location: `-infinity < mu < infinity`
+/// - Scale: `sigma > 0`
+/// - Shape: `alpha > 0`
+///
+/// # Support
+/// - `x > mu`
+///
+/// # Example
+/// Suppose `X ~ Frechet(mu=0.0, sigma=1.0, alpha=3.0)`. To find the 80th percentile, use `p=0.80` and
+/// ```
+/// use ruststat::frechet_per;
+/// println!("Percentile: {}", frechet_per(0.8, 0.0, 1.0, 3.0));
+/// ```
 pub fn frechet_per(p: f64, mu: f64, sigma: f64, alpha: f64) -> f64 {
     if sigma <= 0.0 || alpha <= 0.0 || p <= 0.0 || p >= 1.0 {
         println!("NAN produced. Error in function frechet_per");
@@ -105,6 +147,21 @@ pub fn frechet_per(p: f64, mu: f64, sigma: f64, alpha: f64) -> f64 {
 }
 
 /// Random draw from `X ~ Frechet(mu, sigma, alpha)` distribution.
+///
+/// # Parameters
+/// - Location: `-infinity < mu < infinity`
+/// - Scale: `sigma > 0`
+/// - Shape: `alpha > 0`
+///
+/// # Support
+/// - `x > mu`
+///
+/// # Example
+/// Suppose `X ~ Frechet(mu=0.0, sigma=1.0, alpha=3.0)`. Use
+/// ```
+/// use ruststat::frechet_ran;
+/// println!("Random draw: {}", frechet_ran(0.0, 1.0, 3.0));
+/// ```
 pub fn frechet_ran(mu: f64, sigma: f64, alpha: f64) -> f64 {
     if sigma <= 0.0 || alpha <= 0.0 {
         println!("Bad argument to frechet_ran");
@@ -114,7 +171,22 @@ pub fn frechet_ran(mu: f64, sigma: f64, alpha: f64) -> f64 {
     mu + sigma * (-u.ln()).powf(-1.0 / alpha)
 }
 
-/// Save random draws from `X ~ Frechet(mu, sigma, alpha)` distribution into a `Vec`
+/// Save random draws from `X ~ Frechet(mu, sigma, alpha)` distribution into a `Vec`.
+///
+/// # Parameters
+/// - Location: `-infinity < mu < infinity`
+/// - Scale: `sigma > 0`
+/// - Shape: `alpha > 0`
+///
+/// # Support
+/// - `x > mu`
+///
+/// # Example
+/// Suppose `X ~ Frechet(mu=0.0, sigma=1.0, alpha=3.0)`. Use
+/// ```
+/// use ruststat::frechet_ranvec;
+/// println!("Random Vec: {:?}", frechet_ranvec(10, 0.0, 1.0, 3.0));
+/// ```
 pub fn frechet_ranvec(n: u64, mu: f64, sigma: f64, alpha: f64) -> Vec<f64> {
     if sigma <= 0.0 || alpha <= 0.0 {
         println!("Bad argument to frechet_ranvec");

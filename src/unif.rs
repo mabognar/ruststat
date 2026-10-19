@@ -1,9 +1,3 @@
-// ==========================================
-// ==========================================
-// Continuous Uniform Distribution
-// ==========================================
-// ==========================================
-
 use rand::random;
 
 /// Struct for continuous uniform distribution `X ~ Unif(a,b)`.
@@ -176,7 +170,6 @@ pub fn unif_ran(a: f64, b: f64) -> f64 {
 /// println!("Random Vec: {:?}", unif_ranvec(10, 0.0, 1.0));
 /// ```
 pub fn unif_ranvec(n: u64, a: f64, b: f64) -> Vec<f64> {
-    // Tell Rust exactly how much memory we need upfront
     let mut xvec: Vec<f64> = Vec::with_capacity(n as usize);
 
     for _ in 0..n {

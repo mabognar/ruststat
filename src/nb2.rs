@@ -1,9 +1,3 @@
-// ==========================================
-// ==========================================
-// Negative Binomial Distribution 2
-// ==========================================
-// ==========================================
-
 use crate::{betai, factln_u};
 use crate::geo2::geo2_ran;
 
@@ -84,11 +78,9 @@ pub fn nb2_pmf(x: u64, r: u64, p: f64) -> f64 {
         return 0.0;
     }
 
-    // --- The Edge Case Patch ---
     if p == 1.0 {
         return if x == r { 1.0 } else { 0.0 };
     }
-    // ---------------------------
 
     (factln_u(x-1) - factln_u(r-1) - factln_u(x-r) + (r as f64)*p.ln() +
         ((x-r) as f64)*(1.0-p).ln()).exp()
@@ -148,7 +140,7 @@ pub fn nb2_per(q: f64, r: u64, p: f64) -> u64 {
     let mut x = r;
     let mut sum = nb2_pmf(x, r, p);
 
-    // Accumulate the PMF
+    // accumulate the pmf
     while sum < q {
         x += 1;
         sum += nb2_pmf(x, r, p);

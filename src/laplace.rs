@@ -1,9 +1,3 @@
-// ==========================================
-// ==========================================
-// Laplace (Double Exponential) Distribution
-// ==========================================
-// ==========================================
-
 use rand::random;
 
 /// Struct for the Laplace distribution `X ~ Laplace(mu, b)`.

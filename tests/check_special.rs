@@ -32,9 +32,9 @@ fn test_gamma_function() {
 #[test]
 fn test_factorial() {
     // fact_i computes standard factorials
-    assert_eq!(fact_i(1), 1);
-    assert_eq!(fact_i(5), 120);
-    assert_eq!(fact_i(10), 3_628_800);
+    assert_eq!(fact_u(1), 1);
+    assert_eq!(fact_u(5), 120);
+    assert_eq!(fact_u(10), 3_628_800);
 
     // fact_f generalizes factorial: x! = x * Gamma(x)
     // 5! = 120

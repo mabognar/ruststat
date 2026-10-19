@@ -1,9 +1,3 @@
-// ==========================================
-// ==========================================
-// Discrete Uniform Distribution
-// ==========================================
-// ==========================================
-
 use rand::random;
 
 /// Struct for the Discrete Uniform distribution `X ~ DiscreteUnif(a, b)`.
@@ -125,7 +119,6 @@ pub fn discrete_unif_cdf(x: i64, a: i64, b: i64) -> f64 {
 pub fn discrete_unif_per(q: f64, a: i64, b: i64) -> i64 {
     if a > b || q < 0.0 || q > 1.0 {
         println!("NAN produced. Error in function discrete_unif_per");
-        // Because we return i64, returning a sentinel or panicking is standard. f64::NAN cast to int is normally 0.
         return f64::NAN as i64;
     }
     if q == 0.0 {
@@ -161,7 +154,7 @@ pub fn discrete_unif_ran(a: i64, b: i64) -> i64 {
     let u: f64 = random();
     let n = (b - a + 1) as f64;
     let mut val = a + (u * n).floor() as i64;
-    if val > b { val = b; } // Safety limit in case random() gives exactly 1.0
+    if val > b { val = b; }
     val
 }
 

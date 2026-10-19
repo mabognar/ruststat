@@ -1,9 +1,3 @@
-// ==========================================
-// ==========================================
-// Log-Logistic Distribution
-// ==========================================
-// ==========================================
-
 use std::f64::consts::PI;
 use rand::random;
 
@@ -69,6 +63,20 @@ impl LogLogisticDist {
 }
 
 /// Computes probability density function (pdf) for `X ~ LogLogistic(alpha, beta)`.
+///
+/// # Parameters
+/// - Scale: `alpha > 0`
+/// - Shape: `beta > 0`
+///
+/// # Support
+/// - `x > 0`
+///
+/// # Example
+/// Suppose `X ~ LogLogistic(alpha=1.0, beta=2.0)`. Use
+/// ```
+/// use ruststat::loglogistic_pdf;
+/// println!("Probability density function f(1.5): {}", loglogistic_pdf(1.5, 1.0, 2.0));
+/// ```
 pub fn loglogistic_pdf(x: f64, alpha: f64, beta: f64) -> f64 {
     if alpha <= 0.0 || beta <= 0.0 {
         println!("NAN produced. Error in function loglogistic_pdf");
@@ -80,7 +88,22 @@ pub fn loglogistic_pdf(x: f64, alpha: f64, beta: f64) -> f64 {
     (beta / alpha) * (x / alpha).powf(beta - 1.0) / (1.0 + (x / alpha).powf(beta)).powi(2)
 }
 
+
 /// Computes cumulative distribution function (cdf) for `X ~ LogLogistic(alpha, beta)`.
+///
+/// # Parameters
+/// - Scale: `alpha > 0`
+/// - Shape: `beta > 0`
+///
+/// # Support
+/// - `x > 0`
+///
+/// # Example
+/// Suppose `X ~ LogLogistic(alpha=1.0, beta=2.0)`. Use
+/// ```
+/// use ruststat::loglogistic_cdf;
+/// println!("P(X<=1.5): {}", loglogistic_cdf(1.5, 1.0, 2.0));
+/// ```
 pub fn loglogistic_cdf(x: f64, alpha: f64, beta: f64) -> f64 {
     if alpha <= 0.0 || beta <= 0.0 {
         println!("NAN produced. Error in function loglogistic_cdf");
@@ -93,6 +116,23 @@ pub fn loglogistic_cdf(x: f64, alpha: f64, beta: f64) -> f64 {
 }
 
 /// Computes a percentile for `X ~ LogLogistic(alpha, beta)`.
+///
+/// # Note
+/// Determines the value of `x` such that `P(X <= x) = p`.
+///
+/// # Parameters
+/// - Scale: `alpha > 0`
+/// - Shape: `beta > 0`
+///
+/// # Support
+/// - `x > 0`
+///
+/// # Example
+/// Suppose `X ~ LogLogistic(alpha=1.0, beta=2.0)`. To find the 80th percentile, use `p=0.80` and
+/// ```
+/// use ruststat::loglogistic_per;
+/// println!("Percentile: {}", loglogistic_per(0.8, 1.0, 2.0));
+/// ```
 pub fn loglogistic_per(p: f64, alpha: f64, beta: f64) -> f64 {
     if alpha <= 0.0 || beta <= 0.0 || p < 0.0 || p > 1.0 {
         println!("NAN produced. Error in function loglogistic_per");
@@ -101,7 +141,22 @@ pub fn loglogistic_per(p: f64, alpha: f64, beta: f64) -> f64 {
     alpha * (p / (1.0 - p)).powf(1.0 / beta)
 }
 
+
 /// Random draw from `X ~ LogLogistic(alpha, beta)` distribution.
+///
+/// # Parameters
+/// - Scale: `alpha > 0`
+/// - Shape: `beta > 0`
+///
+/// # Support
+/// - `x > 0`
+///
+/// # Example
+/// Suppose `X ~ LogLogistic(alpha=1.0, beta=2.0)`. Use
+/// ```
+/// use ruststat::loglogistic_ran;
+/// println!("Random draw: {}", loglogistic_ran(1.0, 2.0));
+/// ```
 pub fn loglogistic_ran(alpha: f64, beta: f64) -> f64 {
     if alpha <= 0.0 || beta <= 0.0 {
         println!("Bad argument to loglogistic_ran");
@@ -111,7 +166,21 @@ pub fn loglogistic_ran(alpha: f64, beta: f64) -> f64 {
     alpha * (u / (1.0 - u)).powf(1.0 / beta)
 }
 
-/// Save random draws from `X ~ LogLogistic(alpha, beta)` distribution into a `Vec`
+/// Save random draws from `X ~ LogLogistic(alpha, beta)` distribution into a `Vec`.
+///
+/// # Parameters
+/// - Scale: `alpha > 0`
+/// - Shape: `beta > 0`
+///
+/// # Support
+/// - `x > 0`
+///
+/// # Example
+/// Suppose `X ~ LogLogistic(alpha=1.0, beta=2.0)`. Use
+/// ```
+/// use ruststat::loglogistic_ranvec;
+/// println!("Random Vec: {:?}", loglogistic_ranvec(10, 1.0, 2.0));
+/// ```
 pub fn loglogistic_ranvec(n: u64, alpha: f64, beta: f64) -> Vec<f64> {
     if alpha <= 0.0 || beta <= 0.0 {
         println!("Bad argument to loglogistic_ranvec");

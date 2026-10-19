@@ -1,9 +1,3 @@
-// ==========================================
-// ==========================================
-// Normal Distribution
-// ==========================================
-// ==========================================
-
 use std::f64::consts::PI;
 use rand::random;
 use crate::{erf, erf_inv};
@@ -144,11 +138,10 @@ pub fn normal_ran(mu: f64, sigma: f64) -> f64 {
         return f64::NAN;
     }
 
-    // Use the standard random() shortcut directly
     let u1: f64 = random();
     let u2: f64 = random();
 
-    // The Box-Muller transform
+    // Box-Muller transform
     mu + sigma * (-2.0 * u1.ln()).sqrt() * (2.0 * PI * u2).cos()
 }
 
@@ -172,22 +165,20 @@ pub fn normal_ranvec(n: u64, mu: f64, sigma: f64) -> Vec<f64> {
         return if n == 0 { vec![] } else { vec![f64::NAN] };
     }
 
-    // Pre-allocate the exact amount of memory needed
     let mut zvecthr: Vec<f64> = Vec::with_capacity(n as usize);
 
-    // Calculate how many loop iterations we need (generating 2 at a time)
+    // calculate how many loop iterations we need (generating 2 at a time)
     let niter = (n + 1) / 2;
 
     for _ in 0..niter {
-        // Use the standard random() shortcut directly
         let u1: f64 = random();
         let u2: f64 = random();
 
-        // Calculate the shared components of the Box-Muller transform once
+        // shared components of Box-Muller transform
         let r = sigma * (-2.0 * u1.ln()).sqrt();
         let theta = 2.0 * PI * u2;
 
-        // Generate the pair
+        // generate pair
         let z1 = mu + r * theta.cos();
         let z2 = mu + r * theta.sin();
 
@@ -195,7 +186,7 @@ pub fn normal_ranvec(n: u64, mu: f64, sigma: f64) -> Vec<f64> {
         zvecthr.push(z2);
     }
 
-    // If 'n' was an odd number, we generated exactly 1 too many. Pop it off.
+    // if 'n' was odd number, pop off last one (un-needed)
     if n % 2 != 0 {
         zvecthr.pop();
     }

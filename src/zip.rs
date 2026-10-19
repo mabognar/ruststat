@@ -1,9 +1,3 @@
-// ==========================================
-// ==========================================
-// Zero-Inflated Poisson Distribution
-// ==========================================
-// ==========================================
-
 use rand::random;
 use crate::{pois_cdf, pois_pmf, pois_ran};
 
@@ -60,6 +54,20 @@ impl ZipDist {
 }
 
 /// Computes probability mass function (pmf) for `X ~ ZIP(lambda, pi)`.
+///
+/// # Parameters
+/// - Poisson rate: `lambda > 0`
+/// - Probability of excess zeros: `pi` (`0 <= pi <= 1`)
+///
+/// # Support
+/// - `x = 0, 1, 2, ...`
+///
+/// # Example
+/// Suppose `X ~ ZIP(lambda=2.5, pi=0.2)`. Use
+/// ```
+/// use ruststat::zip_pmf;
+/// println!("P(X=0): {}", zip_pmf(0, 2.5, 0.2));
+/// ```
 pub fn zip_pmf(x: u64, lambda: f64, pi: f64) -> f64 {
     if lambda <= 0.0 || pi < 0.0 || pi > 1.0 {
         println!("NAN produced. Error in function zip_pmf");
@@ -73,6 +81,20 @@ pub fn zip_pmf(x: u64, lambda: f64, pi: f64) -> f64 {
 }
 
 /// Computes cumulative distribution function (cdf) for `X ~ ZIP(lambda, pi)`.
+///
+/// # Parameters
+/// - Poisson rate: `lambda > 0`
+/// - Probability of excess zeros: `pi` (`0 <= pi <= 1`)
+///
+/// # Support
+/// - `x = 0, 1, 2, ...`
+///
+/// # Example
+/// Suppose `X ~ ZIP(lambda=2.5, pi=0.2)`. Use
+/// ```
+/// use ruststat::zip_cdf;
+/// println!("P(X<=2): {}", zip_cdf(2, 2.5, 0.2));
+/// ```
 pub fn zip_cdf(x: u64, lambda: f64, pi: f64) -> f64 {
     if lambda <= 0.0 || pi < 0.0 || pi > 1.0 {
         println!("NAN produced. Error in function zip_cdf");
@@ -82,6 +104,23 @@ pub fn zip_cdf(x: u64, lambda: f64, pi: f64) -> f64 {
 }
 
 /// Computes a percentile for `X ~ ZIP(lambda, pi)`.
+///
+/// # Note
+/// Determines the smallest (integer) value of `x` such that `P(X <= x) >= q`.
+///
+/// # Parameters
+/// - Poisson rate: `lambda > 0`
+/// - Probability of excess zeros: `pi` (`0 <= pi <= 1`)
+///
+/// # Support
+/// - `x = 0, 1, 2, ...`
+///
+/// # Example
+/// Suppose `X ~ ZIP(lambda=2.5, pi=0.2)`. To find the 80th percentile, use `q=0.80` and
+/// ```
+/// use ruststat::zip_per;
+/// println!("Percentile: {}", zip_per(0.8, 2.5, 0.2));
+/// ```
 pub fn zip_per(q: f64, lambda: f64, pi: f64) -> u64 {
     if lambda <= 0.0 || pi < 0.0 || pi > 1.0 || q < 0.0 || q > 1.0 {
         println!("NAN produced. Error in function zip_per");
@@ -101,6 +140,20 @@ pub fn zip_per(q: f64, lambda: f64, pi: f64) -> u64 {
 }
 
 /// Random draw from `X ~ ZIP(lambda, pi)` distribution.
+///
+/// # Parameters
+/// - Poisson rate: `lambda > 0`
+/// - Probability of excess zeros: `pi` (`0 <= pi <= 1`)
+///
+/// # Support
+/// - `x = 0, 1, 2, ...`
+///
+/// # Example
+/// Suppose `X ~ ZIP(lambda=2.5, pi=0.2)`. Use
+/// ```
+/// use ruststat::zip_ran;
+/// println!("Random draw: {}", zip_ran(2.5, 0.2));
+/// ```
 pub fn zip_ran(lambda: f64, pi: f64) -> u64 {
     if lambda <= 0.0 || pi < 0.0 || pi > 1.0 {
         println!("NAN produced. Error in function zip_ran");
@@ -114,7 +167,22 @@ pub fn zip_ran(lambda: f64, pi: f64) -> u64 {
     }
 }
 
-/// Save random draws from `X ~ ZIP(lambda, pi)` distribution into a `Vec`
+
+/// Save random draws from `X ~ ZIP(lambda, pi)` distribution into a `Vec`.
+///
+/// # Parameters
+/// - Poisson rate: `lambda > 0`
+/// - Probability of excess zeros: `pi` (`0 <= pi <= 1`)
+///
+/// # Support
+/// - `x = 0, 1, 2, ...`
+///
+/// # Example
+/// Suppose `X ~ ZIP(lambda=2.5, pi=0.2)`. Use
+/// ```
+/// use ruststat::zip_ranvec;
+/// println!("Random Vec: {:?}", zip_ranvec(10, 2.5, 0.2));
+/// ```
 pub fn zip_ranvec(nn: u64, lambda: f64, pi: f64) -> Vec<u64> {
     if lambda <= 0.0 || pi < 0.0 || pi > 1.0 {
         println!("Bad argument to zip_ranvec");

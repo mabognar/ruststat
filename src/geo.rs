@@ -1,9 +1,3 @@
-// ==========================================
-// ==========================================
-// Geometric Distribution
-// ==========================================
-// ==========================================
-
 use crate::unif::unif_ran;
 
 /// Struct for the geometric distribution `X ~ Geo(p)` where
@@ -72,7 +66,7 @@ impl GeoDist {
 /// println!("P(X=x): {}", geo_pmf(3, 0.6));
 /// ```
 pub fn geo_pmf(x: u64, p: f64) -> f64 {
-    if p < 0.0 || p > 1.0 { // Note: changed p <= 0.0 to p < 0.0 to allow the 0.0 check
+    if p < 0.0 || p > 1.0 { 
         println!("NAN produced. Error in function geo_pmf");
         return f64::NAN;
     }

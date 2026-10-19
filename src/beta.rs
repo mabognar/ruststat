@@ -1,9 +1,3 @@
-// ==========================================
-// ==========================================
-// Beta Distribution
-// ==========================================
-// ==========================================
-
 use crate::{beta_fn_ln, betai, betai_inv, gamma_ran};
 
 /// Struct for the beta distribution `X ~ Beta(alpha, beta)`.

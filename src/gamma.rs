@@ -1,9 +1,3 @@
-// ==========================================
-// ==========================================
-// Gamma Distribution
-// ==========================================
-// ==========================================
-
 use rand::random;
 use crate::{gamma_ln, gammai_inv, gammp, normal_ran};
 
@@ -160,7 +154,6 @@ pub fn gamma_ran(alpha: f64, beta: f64) -> f64 {
 
         v = v.powi(3);
         u = random();
-        // u = rand::thread_rng().gen();
 
         if u < 1.0 - 0.0331 * x.powi(4) {
             return d * v / beta;

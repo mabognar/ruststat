@@ -1,9 +1,3 @@
-// ==========================================
-// ==========================================
-// Cauchy Distribution
-// ==========================================
-// ==========================================
-
 use std::f64::consts::PI;
 use rand::random;
 
@@ -49,10 +43,10 @@ impl CauchyDist {
         cauchy_ranvec(n, self.x0, self.gamma)
     }
     pub fn mean(&mut self) -> f64 {
-        f64::NAN // The Cauchy distribution mean is undefined
+        f64::NAN // Cauchy mean is undefined
     }
     pub fn var(&mut self) -> f64 {
-        f64::NAN // The Cauchy distribution variance is undefined
+        f64::NAN // Cauchy variance is undefined
     }
     pub fn sd(&mut self) -> f64 {
         f64::NAN

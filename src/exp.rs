@@ -1,9 +1,3 @@
-// ==========================================
-// ==========================================
-// Exponential Distribution
-// ==========================================
-// ==========================================
-
 use rand::random;
 
 /// Struct for the exponential distribution `X ~ Exp(lambda)`.
@@ -102,7 +96,6 @@ pub fn exp_cdf(x: f64, lambda: f64) -> f64 {
         return 0.0;
     }
 
-    // Exact closed-form solution
     1.0 - (-lambda * x).exp()
 }
 

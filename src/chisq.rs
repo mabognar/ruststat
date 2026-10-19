@@ -1,9 +1,3 @@
-// ==========================================
-// ==========================================
-// ChiSquare Distribution
-// ==========================================
-// ==========================================
-
 use crate::gamma::{gamma_pdf, gamma_cdf, gamma_per, gamma_ran};
 
 /// Struct for the chi-square distribution `X ~ ChiSq(nu)`.

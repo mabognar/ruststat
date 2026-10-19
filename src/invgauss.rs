@@ -1,9 +1,3 @@
-// ==========================================
-// ==========================================
-// Inverse Gaussian (Wald) Distribution
-// ==========================================
-// ==========================================
-
 use std::f64::consts::PI;
 use rand::random;
 use crate::{normal_cdf, normal_ran};
@@ -61,6 +55,20 @@ impl InvGaussDist {
 }
 
 /// Computes probability density function (pdf) for `X ~ InvGauss(mu, lambda)`.
+///
+/// # Parameters
+/// - Mean: `mu > 0`
+/// - Shape: `lambda > 0`
+///
+/// # Support
+/// - `x > 0`
+///
+/// # Example
+/// Suppose `X ~ InvGauss(mu=1.0, lambda=2.0)`. Use
+/// ```
+/// use ruststat::invgauss_pdf;
+/// println!("Probability density function f(1.5): {}", invgauss_pdf(1.5, 1.0, 2.0));
+/// ```
 pub fn invgauss_pdf(x: f64, mu: f64, lambda: f64) -> f64 {
     if mu <= 0.0 || lambda <= 0.0 {
         println!("NAN produced. Error in function invgauss_pdf");
@@ -73,6 +81,20 @@ pub fn invgauss_pdf(x: f64, mu: f64, lambda: f64) -> f64 {
 }
 
 /// Computes cumulative distribution function (cdf) for `X ~ InvGauss(mu, lambda)`.
+///
+/// # Parameters
+/// - Mean: `mu > 0`
+/// - Shape: `lambda > 0`
+///
+/// # Support
+/// - `x > 0`
+///
+/// # Example
+/// Suppose `X ~ InvGauss(mu=1.0, lambda=2.0)`. Use
+/// ```
+/// use ruststat::invgauss_cdf;
+/// println!("P(X<=1.5): {}", invgauss_cdf(1.5, 1.0, 2.0));
+/// ```
 pub fn invgauss_cdf(x: f64, mu: f64, lambda: f64) -> f64 {
     if mu <= 0.0 || lambda <= 0.0 {
         println!("NAN produced. Error in function invgauss_cdf");
@@ -95,6 +117,23 @@ pub fn invgauss_cdf(x: f64, mu: f64, lambda: f64) -> f64 {
 }
 
 /// Computes a percentile for `X ~ InvGauss(mu, lambda)`.
+///
+/// # Note
+/// Determines the value of `x` such that `P(X <= x) = p`.
+///
+/// # Parameters
+/// - Mean: `mu > 0`
+/// - Shape: `lambda > 0`
+///
+/// # Support
+/// - `x > 0`
+///
+/// # Example
+/// Suppose `X ~ InvGauss(mu=1.0, lambda=2.0)`. To find the 80th percentile, use `p=0.80` and
+/// ```
+/// use ruststat::invgauss_per;
+/// println!("Percentile: {}", invgauss_per(0.8, 1.0, 2.0));
+/// ```
 pub fn invgauss_per(p: f64, mu: f64, lambda: f64) -> f64 {
     if mu <= 0.0 || lambda <= 0.0 || p <= 0.0 || p >= 1.0 {
         println!("NAN produced. Error in function invgauss_per");
@@ -118,6 +157,20 @@ pub fn invgauss_per(p: f64, mu: f64, lambda: f64) -> f64 {
 }
 
 /// Random draw from `X ~ InvGauss(mu, lambda)` distribution using the Michael-Schucany-Haas algorithm.
+///
+/// # Parameters
+/// - Mean: `mu > 0`
+/// - Shape: `lambda > 0`
+///
+/// # Support
+/// - `x > 0`
+///
+/// # Example
+/// Suppose `X ~ InvGauss(mu=1.0, lambda=2.0)`. Use
+/// ```
+/// use ruststat::invgauss_ran;
+/// println!("Random draw: {}", invgauss_ran(1.0, 2.0));
+/// ```
 pub fn invgauss_ran(mu: f64, lambda: f64) -> f64 {
     if mu <= 0.0 || lambda <= 0.0 {
         println!("Bad argument to invgauss_ran");
@@ -135,7 +188,21 @@ pub fn invgauss_ran(mu: f64, lambda: f64) -> f64 {
     }
 }
 
-/// Save random draws from `X ~ InvGauss(mu, lambda)` distribution into a `Vec`
+/// Save random draws from `X ~ InvGauss(mu, lambda)` distribution into a `Vec`.
+///
+/// # Parameters
+/// - Mean: `mu > 0`
+/// - Shape: `lambda > 0`
+///
+/// # Support
+/// - `x > 0`
+///
+/// # Example
+/// Suppose `X ~ InvGauss(mu=1.0, lambda=2.0)`. Use
+/// ```
+/// use ruststat::invgauss_ranvec;
+/// println!("Random Vec: {:?}", invgauss_ranvec(10, 1.0, 2.0));
+/// ```
 pub fn invgauss_ranvec(n: u64, mu: f64, lambda: f64) -> Vec<f64> {
     if mu <= 0.0 || lambda <= 0.0 {
         println!("Bad argument to invgauss_ranvec");
