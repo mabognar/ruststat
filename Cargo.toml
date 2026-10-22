@@ -1,11 +1,11 @@
 [package]
 name = "ruststat"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 license = "MIT"
 keywords = ["probability", "distribution", "statistics"]
 categories = ["science", "mathematics"]
-description = "Utilities for working with many common random variables --- probability mass function (pmf), probability density function (pdf), cumulative distribution function (cdf), percentiles (inverse cdf), random number generation"
+description = "Tools for working with probability distributions --- probability mass/density function (pmf/pdf), cumulative distribution function (cdf), inverse cdf (percentiles), random number generation"
 readme = true
 documentation = "https://docs.rs/ruststat"
 repository = "https://github.com/mabognar/ruststat"

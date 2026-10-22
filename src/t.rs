@@ -43,20 +43,31 @@ impl TDist {
         t_ranvec(n, self.nu)
     }
     pub fn mean(&mut self) -> f64 {
-        0.0
+        if self.nu > 1.0 {
+            0.0
+        }
+        else {
+            f64::NAN
+        }
     }
     pub fn var(&mut self) -> f64 {
         if self.nu > 2.0 {
             self.nu / (self.nu - 2.0)
-        } else {
+        } else if self.nu <= 1.0 {
             f64::NAN
+        }
+        else {
+            f64::INFINITY
         }
     }
     pub fn sd(&mut self) -> f64 {
         if self.nu > 2.0 {
             self.var().sqrt()
-        } else {
+        } else if self.nu <= 1.0 {
             f64::NAN
+        }
+        else {
+            f64::INFINITY
         }
     }
 }

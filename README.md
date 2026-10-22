@@ -1,8 +1,8 @@
 # ruststat - Tools for working with probability distributions
 
-## Version 0.4.0
+## Version 0.4.1
 
-- Extensive testing added. Many new distributions: Weibull, Cauchy, Laplace, Triangular, Bernoulli, Discrete Uniform, Burr (Type XII), Log-Logistic, Rayleigh, Inverse Gamma, Inverse Gaussian, Fréchet, Zero-Inflated Poisson (ZIP), and Zero-Inflated Negative Binomial (ZINB).
+- Bug fixes. Many new distributions: Weibull, Cauchy, Laplace, Triangular, Bernoulli, Discrete Uniform, Burr (Type XII), Log-Logistic, Rayleigh, Inverse Gamma, Inverse Gaussian, Fréchet, Zero-Inflated Poisson (ZIP), and Zero-Inflated Negative Binomial (ZINB).
 
 ## Features
 
@@ -55,7 +55,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-ruststat = "0.4.0"
+ruststat = "0.4.1"
 ```
 
 ## Quick Start

@@ -432,8 +432,8 @@ pub fn gammapprox(x: f64, a: f64) -> f64 {
 /// println!("Incomplete gamma (series): {}", gser(1.5, 2.0));
 /// ```
 pub fn gser(x: f64, a: f64) -> f64 {
-    let imax = 100;
-    let eps = 3.0e-7;
+    let imax = 1000;
+    let eps = 1.0e-8;
     // let fpmin = 1.0e-30;
     let gln = gamma_ln(a);
 
@@ -478,8 +478,8 @@ pub fn gser(x: f64, a: f64) -> f64 {
 /// println!("Complementary incomplete gamma (continued fraction): {}", gcf(1.5, 2.0));
 /// ```
 pub fn gcf(x: f64, a: f64) -> f64 {
-    let imax = 100;
-    let eps = 3.0e-7;
+    let imax = 1000;
+    let eps = 1.0e-8;
     let fpmin = 1.0e-30;
 
     let gln = gamma_ln(a);
@@ -531,8 +531,8 @@ pub fn gcf(x: f64, a: f64) -> f64 {
 /// println!("Log complementary incomplete gamma (continued fraction): {}", gcf_ln(1.5, 2.0));
 /// ```
 pub fn gcf_ln(x: f64, a: f64) -> f64 {
-    let imax = 100;
-    let eps = 3.0e-7;
+    let imax = 1000;
+    let eps = 1.0e-8;
     let fpmin = 1.0e-30;
 
     let gln = gamma_ln(a);
@@ -619,8 +619,8 @@ pub fn betai(x: f64, a: f64, b: f64) -> f64 {
 /// - `b > 0`
 /// - `0 < x < 1`
 fn betacf(x: f64, a: f64, b: f64) -> f64 {
-    let imax = 100;
-    let eps = 3.0e-7;
+    let imax = 1000;
+    let eps = 1.0e-8;
     let fpmin = 1.0e-30;
 
     let mut m2: u64;

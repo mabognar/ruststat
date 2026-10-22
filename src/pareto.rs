@@ -48,14 +48,17 @@ impl Pareto1Dist {
         pareto4_ranvec(n, self.sigma, self.sigma, 1.0, self.alpha)
     }
     pub fn mean(&mut self) -> f64 {
-        if self.alpha <= 1.0 { return f64::NAN; }
+        if self.alpha <= 1.0 { return f64::INFINITY; }
         self.sigma + self.sigma * gamma(self.alpha - 1.0) * gamma(2.0) / gamma(self.alpha)
     }
     pub fn var(&mut self) -> f64 {
-        if self.alpha <= 2.0 { return f64::NAN; }
+        if self.alpha <= 1.0 { return f64::NAN; }
+        else if self.alpha <= 2.0 { return f64::INFINITY; }
         self.sigma.powi(2) * gamma(self.alpha - 2.0) * gamma(3.0) / gamma(self.alpha) - (self.mean() - self.sigma).powi(2)
     }
     pub fn sd(&mut self) -> f64 {
+        if self.alpha <= 1.0 { return f64::NAN; }
+        else if self.alpha <= 2.0 { return f64::INFINITY; }
         self.var().sqrt()
     }
 }

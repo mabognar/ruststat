@@ -13,7 +13,7 @@ macro_rules! assert_approx_eq {
     }};
 }
 
-const TOL: f64 = 1e-6;
+const TOL: f64 = 1e-10;
 
 #[test]
 fn test_gamma_function() {

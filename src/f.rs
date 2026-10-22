@@ -42,15 +42,18 @@ impl FDist {
     pub fn ranvec(&mut self, n: u64) -> Vec<f64> {
         f_ranvec(n, self.nu1, self.nu2)
     }
-    pub fn mean(&mut self) -> f64 {
-        self.nu2 / (self.nu2-2.0)
+    pub fn mean(&mut self) -> f64
+    {
+        if self.nu2 > 2.0 {self.nu2 / (self.nu2-2.0)}
+        else {f64::NAN}
     }
     pub fn var(&mut self) -> f64 {
-        2.0 * self.nu2.powi(2) * (self.nu1 + self.nu2 - 2.0) /
-            (self.nu1 * (self.nu2 - 2.0).powi(2) * (self.nu2 - 4.0))
+        if self.nu2 > 4.0 {2.0 * self.nu2.powi(2) * (self.nu1 + self.nu2 - 2.0) /
+            (self.nu1 * (self.nu2 - 2.0).powi(2) * (self.nu2 - 4.0))}
+        else {f64::NAN}
     }
     pub fn sd(&mut self) -> f64 {
-        self.var().sqrt()
+        if self.nu2 > 4.0 { self.var().sqrt() } else { f64::NAN }
     }
 }
 

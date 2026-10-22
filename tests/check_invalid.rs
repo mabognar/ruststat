@@ -4,7 +4,7 @@ fn test_invalid_parameters_yield_nan() {
     assert!(ruststat::beta_pdf(0.5, 0.0, 1.0).is_nan());
     assert!(ruststat::beta_pdf(0.5, 1.0, -1.0).is_nan());
 
-    // Burr (s > 0, c > 0, k > 0)
+    // Burr (lambda > 0, c > 0, k > 0)
     assert!(ruststat::burr_pdf(1.0, 0.0, 1.0, 1.0).is_nan());
     assert!(ruststat::burr_pdf(1.0, 1.0, -1.0, 1.0).is_nan());
     assert!(ruststat::burr_pdf(1.0, 1.0, 1.0, 0.0).is_nan());
