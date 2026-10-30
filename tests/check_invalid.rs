@@ -118,6 +118,18 @@ fn test_invalid_parameters_yield_nan() {
     assert!(ruststat::hg_pmf(2, 5, 10, 15).is_nan()); // Successes in pop > Population
     assert!(ruststat::hg_pmf(2, 15, 10, 5).is_nan()); // Trial count > Population
 
+    // Negative Hypergeometric (r >= 1, N >= 1, M <= N, r <= M)
+    assert!(ruststat::nhg_pmf(2, 0, 10, 5).is_nan());   // Target successes (r) < 1
+    assert!(ruststat::nhg_pmf(2, 5, 0, 0).is_nan());    // Population (N) < 1
+    assert!(ruststat::nhg_pmf(2, 5, 10, 15).is_nan());  // Successes in pop (M) > Population (N)
+    assert!(ruststat::nhg_pmf(2, 10, 10, 5).is_nan());  // Target successes (r) > Successes in pop (M)
+
+    // Negative Hypergeometric 2 (r >= 1, N >= 1, M <= N, r <= M)
+    assert!(ruststat::nhg2_pmf(6, 0, 10, 5).is_nan());
+    assert!(ruststat::nhg2_pmf(6, 5, 0, 0).is_nan());
+    assert!(ruststat::nhg2_pmf(6, 5, 10, 15).is_nan());
+    assert!(ruststat::nhg2_pmf(6, 10, 10, 5).is_nan());
+    
     // Negative Binomial (r >= 1, 0 < p <= 1)
     assert!(ruststat::nb_pmf(2, 0, 0.5).is_nan());
     assert!(ruststat::nb_pmf(2, 3, -0.1).is_nan());

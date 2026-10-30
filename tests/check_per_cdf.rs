@@ -9,7 +9,8 @@ use ruststat::{bernoulli_cdf, bernoulli_per, beta_cdf, beta_per, bin_cdf, bin_pe
                nb2_cdf, nb2_per, nb_cdf, nb_per, normal_cdf, normal_per,
                pareto4_cdf, pareto4_per, pois_cdf, pois_per, rayleigh_cdf, rayleigh_per,
                t_cdf, t_per, triangular_cdf, triangular_per, unif_cdf, unif_per,
-               weibull_cdf, weibull_per, zinb_cdf, zinb_per, zip_cdf, zip_per};
+               weibull_cdf, weibull_per, zinb_cdf, zinb_per, zip_cdf, zip_per,
+               nhg_cdf, nhg_per, nhg2_cdf, nhg2_per};
 
 macro_rules! assert_approx_eq {
     ($a:expr, $b:expr, $eps:expr) => {{
@@ -149,6 +150,14 @@ fn test_distribution_percentile_roundtrips() {
         let x_hg = hg_per(p, 20, 100, 50);
         assert!(hg_cdf(x_hg, 20, 100, 50) >= p - tolerance);
 
+        // Test Negative Hypergeometric(10, 100, 50)
+        let x_nhg = nhg_per(p, 10, 100, 50);
+        assert!(nhg_cdf(x_nhg, 10, 100, 50) >= p - tolerance);
+
+        // Test Negative Hypergeometric 2(10, 100, 50)
+        let x_nhg2 = nhg2_per(p, 10, 100, 50);
+        assert!(nhg2_cdf(x_nhg2, 10, 100, 50) >= p - tolerance);
+        
         // Test Negative Binomial(4, 0.2)
         let x_nb = nb_per(p, 4, 0.2);
         assert!(nb_cdf(x_nb, 4, 0.2) >= p - tolerance);

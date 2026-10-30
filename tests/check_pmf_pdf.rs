@@ -163,6 +163,17 @@ fn test_pmfs() {
     let expected_hg = 0.397316821465;
     assert_approx_eq!(expected_hg, hg_pmf(2, 5, 20, 8), TOL);
 
+    // Negative Hypergeometric(r=5, N=20, M=12) at x = 3 (failures before 5th success)
+    // P(X=3) = ( (3+5-1)C3 * (20-3-5)C(12-5) ) / 20C12
+    //        = ( 7C3 * 12C7 ) / 20C12 = (35 * 792) / 125970 = 27720 / 125970
+    let expected_nhg = 0.220052393427;
+    assert_approx_eq!(expected_nhg, nhg_pmf(3, 5, 20, 12), TOL);
+
+    // Negative Hypergeometric 2(r=5, N=20, M=12) at x = 8 (trial of 5th success)
+    // P(X=8) = P(NHG=3) = 0.220052393427
+    let expected_nhg2 = 0.220052393427;
+    assert_approx_eq!(expected_nhg2, nhg2_pmf(8, 5, 20, 12), TOL);
+    
     // Negative Binomial(r=3, p=0.4) at x = 2 (failures before r-th success)
     // P(X=2) = (4 choose 2) * p^3 * (1-p)^2 = 6 * 0.064 * 0.36 = 0.13824
     let expected_nb = 0.138240000000;

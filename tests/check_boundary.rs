@@ -43,6 +43,21 @@ fn test_distribution_boundaries() {
     assert_eq!(ruststat::hg_pmf(10, 10, 100, 100), 1.0);// M=N (population is entirely successes)
     assert_eq!(ruststat::hg_cdf(15, 10, 100, 50), 1.0); // x > n returns 1.0
 
+    // Negative Hypergeometric (failures before r-th success)
+    assert_eq!(ruststat::nhg_pmf(9, 5, 20, 12), 0.0);       // Cannot have more than N-M failures (x > N-M)
+    assert_eq!(ruststat::nhg_cdf(10, 5, 20, 12), 1.0);      // x >= N-M returns 1.0
+    assert_eq!(ruststat::nhg_pmf(0, 5, 20, 20), 1.0);       // M=N (population is entirely successes, 0 failures guaranteed)
+    assert_eq!(ruststat::nhg_pmf(3, 5, 20, 20), 0.0);       // M=N (impossible to get failures)
+    assert_eq!(ruststat::nhg_cdf(0, 5, 20, 20), 1.0);
+
+    // Negative Hypergeometric 2 (trial of r-th success)
+    assert_eq!(ruststat::nhg2_pmf(4, 5, 20, 12), 0.0);      // Cannot achieve 5 successes in 4 trials (x < r)
+    assert_eq!(ruststat::nhg2_cdf(4, 5, 20, 12), 0.0);
+    assert_eq!(ruststat::nhg2_pmf(14, 5, 20, 12), 0.0);     // Cannot exceed max possible trials N-M+r
+    assert_eq!(ruststat::nhg2_cdf(13, 5, 20, 12), 1.0);     // Max possible trials returns 1.0
+    assert_eq!(ruststat::nhg2_pmf(5, 5, 20, 20), 1.0);      // M=N (5 successes takes exactly 5 trials)
+    assert_eq!(ruststat::nhg2_pmf(7, 5, 20, 20), 0.0);      // M=N (impossible to take > 5 trials)
+
     // Negative Binomial (failures before r-th success)
     assert_eq!(ruststat::nb_pmf(0, 5, 1.0), 1.0);       // p=1 means exactly 0 failures to get r successes
     assert_eq!(ruststat::nb_pmf(3, 5, 1.0), 0.0);       // Impossible to fail if p=1

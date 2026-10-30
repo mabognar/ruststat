@@ -95,4 +95,24 @@ fn test_distribution_equivalencies() {
     // ZINB(r, p, 0) = NB(r, p)
     assert_approx_eq!(ruststat::zinb_pmf(2, 4, 0.4, 0.0), ruststat::nb_pmf(2, 4, 0.4), tol);
     assert_approx_eq!(ruststat::zinb_cdf(4, 4, 0.4, 0.0), ruststat::nb_cdf(4, 4, 0.4), tol);
+
+    // Negative Hypergeometric CDF relates to the standard Hypergeometric CDF.
+    // P(NHG <= x) is the probability of observing at most x failures before the r-th success,
+    // which means in the first (x+r) draws, we must have obtained at least r successes.
+    // P(NHG(r, N, M) <= x) == P(HG(n = x + r, N, M) >= r) == 1 - P(HG <= r - 1)
+    let x_nhg = 3;
+    let r_nhg = 5;
+    assert_approx_eq!(
+        ruststat::nhg_cdf(x_nhg, r_nhg, 20, 12),
+        1.0 - ruststat::hg_cdf(r_nhg - 1, x_nhg + r_nhg, 20, 12),
+        tol
+    );
+
+    // Similarly for NHG2, where the total trials y = x + r
+    let y_nhg2 = 8;
+    assert_approx_eq!(
+        ruststat::nhg2_cdf(y_nhg2, r_nhg, 20, 12),
+        1.0 - ruststat::hg_cdf(r_nhg - 1, y_nhg2, 20, 12),
+        tol
+    );
 }
