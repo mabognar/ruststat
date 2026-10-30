@@ -1,14 +1,14 @@
 # ruststat - Tools for working with probability distributions
 
-## Version 0.4.1
+## Version 0.4.2
 
-- Bug fixes. Many new distributions: Weibull, Cauchy, Laplace, Triangular, Bernoulli, Discrete Uniform, Burr (Type XII), Log-Logistic, Rayleigh, Inverse Gamma, Inverse Gaussian, Fréchet, Zero-Inflated Poisson (ZIP), and Zero-Inflated Negative Binomial (ZINB).
+- Added Negative Hypergeometric distribution (2 parameterizations)
 
 ## Features
 
 - Probability mass function (pmf), probability density function (pdf)
 - Cumulative distribution function (cdf)
-- Percentiles (inverse cdf)
+- Quantiles/Percentiles (inverse cdf)
 - Random number generation
 - Mean, variance, and standard deviation
 
@@ -19,7 +19,7 @@
 - Burr (Type XII)
 - Cauchy
 - Chi-square
-- Continuous uniform
+- Continuous Uniform
 - Exponential
 - F
 - Fréchet
@@ -30,7 +30,7 @@
 - Laplace (Double Exponential)
 - Log-Logistic (Fisk)
 - Logistic
-- Log-normal
+- Log-Normal
 - Normal
 - Pareto (Types I, II, III, IV)
 - Rayleigh
@@ -41,10 +41,11 @@
 #### Discrete
 - Bernoulli
 - Binomial
-- Discrete uniform
+- Discrete Uniform
 - Geometric (2 parameterizations)
 - Hypergeometric
-- Negative binomial (2 parameterizations)
+- Negative Binomial (2 parameterizations)
+- Negative Hypergeometric (2 parameterizations)
 - Poisson
 - Zero-Inflated Negative Binomial (ZINB)
 - Zero-Inflated Poisson (ZIP)
@@ -55,7 +56,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-ruststat = "0.4.1"
+ruststat = "0.4.2"
 ```
 
 ## Quick Start
